@@ -28,6 +28,7 @@ WriteMakefile(
 	},
 	TEST_REQUIRES => {
 		'IPC::System::Simple' => 0,
+		'Moo' => 0,
 		'Test::DescribeMe'    => 0,
 		'Test::Memory::Cycle' => 0,
 		'Test::Mockingbird' => 0,
