@@ -13,3 +13,4 @@ t/bypass.t
 t/declarative.t
 t/edge_cases.t
 t/subclass.t
+t/unit.t
