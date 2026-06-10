@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 100.00%<br>
-TER3 (LCSAJ): 100.0% (5/5)<br>
+TER3 (LCSAJ): 100.0% (3/3)<br>
 Approximate LCSAJ segments: 19<br>
 </div>
 
@@ -292,449 +292,716 @@ Approximate LCSAJ segments: 19<br>
 	<pre>
 <span class="">    1: package Sub::Abstract;
 </span><span class="">    2: 
-</span><span class="">    3: # Minimum Perl version: 5.8 (Attribute::Handlers became core in 5.8)
+</span><span class="">    3: # Minimum required Perl version: 5.8 (Attribute::Handlers became core in 5.8).
 </span><span class="">    4: use 5.008;
 </span><span class="">    5: use strict;
 </span><span class="">    6: use warnings;
 </span><span class="">    7: use autodie qw(:all);
 </span><span class="">    8: 
 </span><span class="">    9: use Attribute::Handlers;
-</span><span class="">   10: use Carp              qw(croak);
+</span><span class="">   10: use Carp              qw(croak carp);   # carp reserved for future non-fatal paths
 </span><span class="">   11: use Readonly;
 </span><span class="">   12: use Params::Validate::Strict 0.33 qw(validate_strict);
 </span><span class="">   13: use Return::Set       qw(set_return);
 </span><span class="">   14: 
-</span><span class="">   15: =head1 NAME
-</span><span class="">   16: 
-</span><span class="">   17: Sub::Abstract - Abstract (virtual) methods for plain-Perl OO
+</span><span class="">   15: # NOTE: Params::Get is available for any future method that accepts named
+</span><span class="">   16: # parameters.  import() uses a positional calling convention imposed by
+</span><span class="">   17: # Perl&#39;s &quot;use&quot; mechanism and therefore cannot use named params.
 </span><span class="">   18: 
-</span><span class="">   19: =head1 VERSION
+</span><span class="">   19: =head1 NAME
 </span><span class="">   20: 
-</span><span class="">   21: Version 0.01
+</span><span class="">   21: Sub::Abstract - Abstract (virtual) methods for plain-Perl OO
 </span><span class="">   22: 
-</span><span class="">   23: =cut
+</span><span class="">   23: =head1 VERSION
 </span><span class="">   24: 
-</span><span class="">   25: our $VERSION = &#39;0.01&#39;;
+</span><span class="">   25: Version 0.01
 </span><span class="">   26: 
-</span><span class="">   27: # ---------------------------------------------------------------------------
-</span><span class="">   28: # Constants
-</span><span class="">   29: # ---------------------------------------------------------------------------
+</span><span class="">   27: =cut
+</span><span class="">   28: 
+</span><span class="">   29: our $VERSION = &#39;0.01&#39;;
 </span><span class="">   30: 
-</span><span class="">   31: # Self-referential constant: the canonical name of this package.
-</span><span class="">   32: Readonly::Scalar my $SELF =&gt; __PACKAGE__;
-</span><span class="">   33: 
-</span><span class="">   34: # Validation schema for a single Perl sub name passed to import().
-</span><span class="">   35: Readonly::Scalar my $SUB_NAME_SCHEMA =&gt; {
-</span><span class="">   36: 	name =&gt; {
-</span><span class="">   37: 		type  =&gt; &#39;string&#39;,
-</span><span class="">   38: 		regex =&gt; qr/\A[_a-zA-Z]\w*\z/,
-</span><span class="">   39: 	}
-</span><span class="">   40: };
-</span><span class="">   41: 
-</span><span class="">   42: # ---------------------------------------------------------------------------
-</span><span class="">   43: # Public variables
-</span><span class="">   44: # ---------------------------------------------------------------------------
-</span><span class="">   45: 
-</span><span class="">   46: our $BYPASS = 0;
-</span><span class="">   47: 
-</span><span class="">   48: our %config = (
-</span><span class="">   49: 	harness_bypass =&gt; 1,
-</span><span class="">   50: );
-</span><span class="">   51: 
-</span><span class="">   52: # ---------------------------------------------------------------------------
-</span><span class="">   53: # Internal state
-</span><span class="">   54: # ---------------------------------------------------------------------------
-</span><span class="">   55: 
-</span><span class="">   56: # Pending (owner_pkg, sub_name) pairs to be wrapped at CHECK time.
-</span><span class="">   57: # Populated by import(); consumed and cleared by the CHECK block.
-</span><span class="">   58: my @_pending;
-</span><span class="">   59: 
-</span><span class="">   60: # Set to 1 once the CHECK block fires so import() can wrap immediately.
-</span><span class="">   61: my $_post_check = 0;
-</span><span class="">   62: 
-</span><span class="">   63: # -------------------------------------------------------------------
-</span><span class="">   64: # ATTRIBUTE HANDLER
-</span><span class="">   65: # -------------------------------------------------------------------
-</span><span class="">   66: 
-</span><span class="">   67: # Install :Abstract in UNIVERSAL so every package can use it after a
-</span><span class="">   68: # single &quot;use Sub::Abstract&quot;, with no per-package setup required.
-</span><span class="">   69: # ATTR(CODE,CHECK) fires at CHECK time, after all subs are compiled.
-</span><span class="">   70: # The stub body on the decorated sub is required so that Attribute::Handlers
-</span><span class="">   71: # has a CODE ref to work with; the handler replaces it unconditionally.
-</span><span class="">   72: sub UNIVERSAL::Abstract :ATTR(CODE,CHECK) {
-</span><span class="">   73: 	my ($package, $symbol, $referent, $attr, $data, $phase) = @_;
-</span><span class="">   74: 	my $sub_name = *{$symbol}{NAME};
-</span><span class="">   75: 	no warnings &#39;redefine&#39;;
-</span><span class="">   76: 	*{$symbol} = _wrap($package, $sub_name);
-</span><span class="">   77: 	return;
-</span><span class="">   78: }
-</span><span class="">   79: 
-</span><span class="">   80: # -------------------------------------------------------------------
-</span><span class="">   81: # PUBLIC INTERFACE
-</span><span class="">   82: # -------------------------------------------------------------------
-</span><span class="">   83: 
-</span><span class="">   84: =head1 SYNOPSIS
-</span><span class="">   85: 
-</span><span class="">   86:     package Animal;
-</span><span class="">   87:     use Sub::Abstract;
-</span><span class="">   88: 
-</span><span class="">   89:     # Attribute form (stub body required for Attribute::Handlers)
-</span><span class="">   90:     sub speak :Abstract { }
-</span><span class="">   91:     sub eat   :Abstract { }
-</span><span class="">   92: 
-</span><span class="">   93:     # Declarative form (no stub body needed)
-</span><span class="">   94:     use Sub::Abstract qw(speak eat);
-</span><span class="">   95: 
-</span><span class="">   96:     package Dog;
-</span><span class="">   97:     our @ISA = (&#39;Animal&#39;);
-</span><span class="">   98:     sub speak { &#39;Woof&#39; }    # satisfies the contract; wrapper never fires
-</span><span class="">   99:     # forgot eat -- runtime croak when called
+</span><span class="">   31: # ---------------------------------------------------------------------------
+</span><span class="">   32: # Constants
+</span><span class="">   33: # ---------------------------------------------------------------------------
+</span><span class="">   34: 
+</span><span class="">   35: # Self-referential constant: the canonical name of this package.
+</span><span class="">   36: Readonly::Scalar my $SELF =&gt; __PACKAGE__;
+</span><span class="">   37: 
+</span><span class="">   38: # Validation schema for a single Perl sub name passed to import().
+</span><span class="">   39: # Matches any legal Perl identifier: starts with _ or letter, then \w*.
+</span><span class="">   40: Readonly::Scalar my $SUB_NAME_SCHEMA =&gt; {
+</span><span class="">   41: 	name =&gt; {
+</span><span class="">   42: 		type  =&gt; &#39;string&#39;,
+</span><span class="">   43: 		regex =&gt; qr/\A[_a-zA-Z]\w*\z/,
+</span><span class="">   44: 	}
+</span><span class="">   45: };
+</span><span class="">   46: 
+</span><span class="">   47: # ---------------------------------------------------------------------------
+</span><span class="">   48: # Public variables
+</span><span class="">   49: # ---------------------------------------------------------------------------
+</span><span class="">   50: 
+</span><span class="">   51: # Set to a true value to suppress all abstract-method croaks globally.
+</span><span class="">   52: # Always use &#39;local&#39; in tests to prevent state from bleeding between cases.
+</span><span class="">   53: our $BYPASS = 0;
+</span><span class="">   54: 
+</span><span class="">   55: # Runtime tunables.  Modify $config{harness_bypass} to control whether
+</span><span class="">   56: # HARNESS_ACTIVE suppresses enforcement.  May be extended in future releases.
+</span><span class="">   57: our %config = (
+</span><span class="">   58: 	harness_bypass =&gt; 1,    # 1 = suppress croaks when HARNESS_ACTIVE is set
+</span><span class="">   59: );
+</span><span class="">   60: 
+</span><span class="">   61: # ---------------------------------------------------------------------------
+</span><span class="">   62: # Internal state
+</span><span class="">   63: # ---------------------------------------------------------------------------
+</span><span class="">   64: 
+</span><span class="">   65: # Pending (owner_pkg, sub_name) pairs queued by import() during compilation.
+</span><span class="">   66: # Populated before CHECK fires; consumed and cleared by the CHECK block.
+</span><span class="">   67: my @_pending;
+</span><span class="">   68: 
+</span><span class="">   69: # Becomes 1 once the CHECK block has fired.
+</span><span class="">   70: # import() consults this to decide whether to queue or wrap immediately.
+</span><span class="">   71: my $_post_check = 0;
+</span><span class="">   72: 
+</span><span class="">   73: # ---------------------------------------------------------------------------
+</span><span class="">   74: # ATTRIBUTE HANDLER
+</span><span class="">   75: # ---------------------------------------------------------------------------
+</span><span class="">   76: 
+</span><span class="">   77: # UNIVERSAL::Abstract :ATTR(CODE,CHECK)
+</span><span class="">   78: # Purpose      : Replace any sub decorated with :Abstract with the croak
+</span><span class="">   79: #                closure returned by _wrap().  Fires once per decorated sub
+</span><span class="">   80: #                at CHECK time, after all subs in all packages are compiled.
+</span><span class="">   81: # Entry        : Invoked by Attribute::Handlers with six positional args:
+</span><span class="">   82: #                  $package  -- the package in which the sub was declared
+</span><span class="">   83: #                  $symbol   -- the typeglob for the sub
+</span><span class="">   84: #                  $referent -- the CODE ref (stub body; discarded)
+</span><span class="">   85: #                  $attr     -- the attribute name (&#39;Abstract&#39;)
+</span><span class="">   86: #                  $data     -- attribute arguments (undef for :Abstract)
+</span><span class="">   87: #                  $phase    -- &#39;CHECK&#39;
+</span><span class="">   88: # Exit status  : Returns nothing (void); replaces *{$symbol} in the stash.
+</span><span class="">   89: # Side effects : Overwrites the CODE slot for $symbol in $package&#39;s stash.
+</span><span class="">   90: # Notes        : Compiled inside Sub::Abstract so that caller(1) inside
+</span><span class="">   91: #                _assert_private_caller resolves to Sub::Abstract rather
+</span><span class="">   92: #                than the calling package -- allowing the guard to pass.
+</span><span class="">   93: #                Installing :Abstract in UNIVERSAL gives all packages access
+</span><span class="">   94: #                after a single &quot;use Sub::Abstract&quot;, at the cost of global
+</span><span class="">   95: #                namespace pollution (see KNOWN LIMITATIONS).
+</span><span class="">   96: #                $referent, $attr, $data, $phase are received but unused;
+</span><span class="">   97: #                they are named for documentation clarity only.
+</span><span class="">   98: sub UNIVERSAL::Abstract :ATTR(CODE,CHECK) {
+</span><span class="">   99: 	my ($package, $symbol, undef, undef, undef, undef) = @_;
 </span><span class="">  100: 
-</span><span class="">  101: =head1 DESCRIPTION
-</span><span class="">  102: 
-</span><span class="">  103: Enforces abstract (virtual) method contracts for plain-Perl OO without
-</span><span class="">  104: requiring Moose or Moo.  A subroutine decorated with C&lt;:Abstract&gt; (or
-</span><span class="">  105: named in C&lt;use Sub::Abstract qw(...)&gt;) is replaced at C&lt;CHECK&gt; time with
-</span><span class="">  106: a wrapper that C&lt;Carp::croak&gt;s whenever it is reached.
+</span><span class="">  101: 	# Extract the bare sub name from the typeglob, then replace the glob.
+</span><span class="">  102: 	my $sub_name = *{$symbol}{NAME};
+</span><span class="">  103: 	no warnings &#39;redefine&#39;;
+</span><span class="">  104: 	*{$symbol} = _wrap($package, $sub_name);
+</span><span class="">  105: 	return;
+</span><span class="">  106: }
 </span><span class="">  107: 
-</span><span class="">  108: Perl&#39;s MRO ensures the wrapper is only reached when no subclass in the
-</span><span class="">  109: call chain has provided an implementation: if C&lt;Dog::speak&gt; exists, the
-</span><span class="">  110: wrapper installed in C&lt;Animal::speak&gt; is never called.
+</span><span class="">  108: # ---------------------------------------------------------------------------
+</span><span class="">  109: # PUBLIC INTERFACE
+</span><span class="">  110: # ---------------------------------------------------------------------------
 </span><span class="">  111: 
-</span><span class="">  112: This module is only meaningful for plain-Perl OO or packages that do not
-</span><span class="">  113: use a full object framework.  Moo and Moose handle abstract/required
-</span><span class="">  114: methods in their own object systems.
-</span><span class="">  115: 
-</span><span class="">  116: =head2 Two usage forms
-</span><span class="">  117: 
-</span><span class="">  118: =over 4
-</span><span class="">  119: 
-</span><span class="">  120: =item Attribute form (preferred)
-</span><span class="">  121: 
-</span><span class="">  122:     sub speak :Abstract { }
+</span><span class="">  112: =head1 SYNOPSIS
+</span><span class="">  113: 
+</span><span class="">  114:     package Animal;
+</span><span class="">  115:     use Sub::Abstract;
+</span><span class="">  116: 
+</span><span class="">  117:     # Attribute form (stub body required for Attribute::Handlers)
+</span><span class="">  118:     sub speak :Abstract { }
+</span><span class="">  119:     sub eat   :Abstract { }
+</span><span class="">  120: 
+</span><span class="">  121:     # Declarative form (no stub body needed)
+</span><span class="">  122:     use Sub::Abstract qw(speak eat);
 </span><span class="">  123: 
-</span><span class="">  124: The C&lt;:Abstract&gt; attribute is registered in C&lt;UNIVERSAL&gt; via
-</span><span class="">  125: L&lt;Attribute::Handlers&gt; when C&lt;Sub::Abstract&gt; is loaded, so every package
-</span><span class="">  126: has access to it without further C&lt;use&gt; or inheritance.  A stub body
-</span><span class="">  127: (even an empty one) is required because C&lt;Attribute::Handlers&gt; needs a
-</span><span class="">  128: C&lt;CODE&gt; ref.  The stub is replaced at C&lt;CHECK&gt; time.
-</span><span class="">  129: 
-</span><span class="">  130: =item Declarative form
-</span><span class="">  131: 
-</span><span class="">  132:     use Sub::Abstract qw(speak eat);
-</span><span class="">  133: 
-</span><span class="">  134: Each named method is installed as an abstract-croak wrapper at C&lt;CHECK&gt;
-</span><span class="">  135: time (or immediately if the module is loaded past C&lt;CHECK&gt;).  No stub body
-</span><span class="">  136: is needed.
-</span><span class="">  137: 
-</span><span class="">  138: =back
+</span><span class="">  124:     package Dog;
+</span><span class="">  125:     our @ISA = (&#39;Animal&#39;);
+</span><span class="">  126:     sub speak { &#39;Woof&#39; }    # satisfies the contract; wrapper never fires
+</span><span class="">  127:     # forgot eat -- runtime croak when called
+</span><span class="">  128: 
+</span><span class="">  129: =head1 DESCRIPTION
+</span><span class="">  130: 
+</span><span class="">  131: Enforces abstract (virtual) method contracts for plain-Perl OO without
+</span><span class="">  132: requiring Moose or Moo.  A subroutine decorated with C&lt;:Abstract&gt; (or
+</span><span class="">  133: named in C&lt;use Sub::Abstract qw(...)&gt;) is replaced at C&lt;CHECK&gt; time with
+</span><span class="">  134: a wrapper that C&lt;Carp::croak&gt;s whenever it is reached.
+</span><span class="">  135: 
+</span><span class="">  136: Perl&#39;s MRO ensures the wrapper is only reached when no subclass in the
+</span><span class="">  137: call chain has provided an implementation: if C&lt;Dog::speak&gt; exists, the
+</span><span class="">  138: wrapper installed in C&lt;Animal::speak&gt; is never called.
 </span><span class="">  139: 
-</span><span class="">  140: =head2 Bypass for testing
-</span><span class="">  141: 
-</span><span class="">  142: Either condition alone (OR logic) suppresses the croak:
+</span><span class="">  140: This module is only meaningful for plain-Perl OO or packages that do not
+</span><span class="">  141: use a full object framework.  Moo and Moose handle abstract/required
+</span><span class="">  142: methods in their own object systems.
 </span><span class="">  143: 
-</span><span class="">  144: =over 4
+</span><span class="">  144: =head2 Two usage forms
 </span><span class="">  145: 
-</span><span class="">  146: =item * C&lt;$Sub::Abstract::BYPASS&gt; set to a true value.  Use C&lt;local&gt; in tests.
+</span><span class="">  146: =over 4
 </span><span class="">  147: 
-</span><span class="">  148: =item * C&lt;$ENV{HARNESS_ACTIVE}&gt; set (the convention used by L&lt;Test::Harness&gt;/prove).
+</span><span class="">  148: =item Attribute form (preferred)
 </span><span class="">  149: 
-</span><span class="">  150: =back
+</span><span class="">  150:     sub speak :Abstract { }
 </span><span class="">  151: 
-</span><span class="">  152: The C&lt;HARNESS_ACTIVE&gt; bypass can be disabled:
-</span><span class="">  153: 
-</span><span class="">  154:     $Sub::Abstract::config{harness_bypass} = 0;
-</span><span class="">  155: 
-</span><span class="">  156: =head2 Error message format
+</span><span class="">  152: The C&lt;:Abstract&gt; attribute is registered in C&lt;UNIVERSAL&gt; via
+</span><span class="">  153: L&lt;Attribute::Handlers&gt; when C&lt;Sub::Abstract&gt; is loaded, so every package
+</span><span class="">  154: has access to it without further C&lt;use&gt; or inheritance.  A stub body
+</span><span class="">  155: (even an empty one) is required because C&lt;Attribute::Handlers&gt; needs a
+</span><span class="">  156: C&lt;CODE&gt; ref.  The stub is replaced at C&lt;CHECK&gt; time.
 </span><span class="">  157: 
-</span><span class="">  158:     speak() is an abstract method of Animal and must be implemented by Dog
+</span><span class="">  158: =item Declarative form
 </span><span class="">  159: 
-</span><span class="">  160: =head1 PUBLIC INTERFACE
+</span><span class="">  160:     use Sub::Abstract qw(speak eat);
 </span><span class="">  161: 
-</span><span class="">  162: =head2 import
-</span><span class="">  163: 
-</span><span class="">  164:     use Sub::Abstract;                   # attribute form -- no arguments
-</span><span class="">  165:     use Sub::Abstract qw(speak eat);    # declarative form
-</span><span class="">  166: 
-</span><span class="">  167: =head3 Purpose
-</span><span class="">  168: 
-</span><span class="">  169: With B&lt;no arguments&gt;: makes the C&lt;:Abstract&gt; attribute globally available.
-</span><span class="">  170: 
-</span><span class="">  171: With B&lt;one or more method names&gt;: installs abstract-croak wrappers for
-</span><span class="">  172: those methods in the calling package at C&lt;CHECK&gt; time (or immediately if
-</span><span class="">  173: C&lt;CHECK&gt; has already fired).
-</span><span class="">  174: 
-</span><span class="">  175: =head3 Arguments
+</span><span class="">  162: Each named method is installed as an abstract-croak wrapper at C&lt;CHECK&gt;
+</span><span class="">  163: time (or immediately if the module is loaded past C&lt;CHECK&gt;).  No stub body
+</span><span class="">  164: is needed.
+</span><span class="">  165: 
+</span><span class="">  166: =back
+</span><span class="">  167: 
+</span><span class="">  168: =head2 Bypass for testing
+</span><span class="">  169: 
+</span><span class="">  170: Either condition alone (OR logic) suppresses the croak at call time:
+</span><span class="">  171: 
+</span><span class="">  172: =over 4
+</span><span class="">  173: 
+</span><span class="">  174: =item * C&lt;$Sub::Abstract::BYPASS&gt; set to a true value.  Use C&lt;local&gt; in tests.
+</span><span class="">  175: Checked first; short-circuits the second condition.
 </span><span class="">  176: 
-</span><span class="">  177: =over 4
-</span><span class="">  178: 
-</span><span class="">  179: =item C&lt;@methods&gt; (optional)
-</span><span class="">  180: 
-</span><span class="">  181: Zero or more Perl sub names, each matching C&lt;/\A[_a-zA-Z]\w*\z/&gt;.
-</span><span class="">  182: 
-</span><span class="">  183: =back
-</span><span class="">  184: 
-</span><span class="">  185: =head3 Returns
-</span><span class="">  186: 
-</span><span class="">  187: The class name (C&lt;&#39;Sub::Abstract&#39;&gt;) as a plain string.
-</span><span class="">  188: 
-</span><span class="">  189: =head3 MESSAGES
+</span><span class="">  177: =item * C&lt;$ENV{HARNESS_ACTIVE}&gt; set (the convention used by L&lt;Test::Harness&gt;/prove)
+</span><span class="">  178: B&lt;and&gt; C&lt;$config{harness_bypass}&gt; is truthy (the default).
+</span><span class="">  179: 
+</span><span class="">  180: =back
+</span><span class="">  181: 
+</span><span class="">  182: The C&lt;HARNESS_ACTIVE&gt; bypass can be disabled:
+</span><span class="">  183: 
+</span><span class="">  184:     $Sub::Abstract::config{harness_bypass} = 0;
+</span><span class="">  185: 
+</span><span class="">  186: B&lt;Important:&gt; setting C&lt;$BYPASS&gt; to any truthy value takes full precedence.
+</span><span class="">  187: Even with C&lt;harness_bypass = 0&gt;, a truthy C&lt;$BYPASS&gt; still suppresses the
+</span><span class="">  188: croak.  The two guards use C&lt;||&gt; (short-circuit OR) and C&lt;$BYPASS&gt; is
+</span><span class="">  189: checked first.  See L&lt;/Bypass precedence&gt; under KNOWN LIMITATIONS.
 </span><span class="">  190: 
-</span><span class="">  191:     Message                                              Meaning
-</span><span class="">  192:     ---------------------------------------------------  -----------------------------------------------
-</span><span class="">  193:     &quot;Sub::Abstract-&gt;import: &#39;NAME&#39; is not a valid        A name failed the identifier regex.
-</span><span class="">  194:      Perl identifier&quot;
-</span><span class="">  195: 
-</span><span class="">  196: =cut
-</span><span class="">  197: 
-</span><span class="">  198: sub import {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 205 → 217</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 205 → 0</span></span>  199: 	my ($class, @subs) = @_;
-</span><span class="">  200: 
-</span><span class="">  201: 	# No sub names: the :Abstract attribute is always available via UNIVERSAL.
-</span><span class="">  202: 	return set_return($class, { type =&gt; &#39;string&#39; }) unless @subs;
+</span><span class="">  191: =head2 Error message format
+</span><span class="">  192: 
+</span><span class="">  193:     speak() is an abstract method of Animal and must be implemented by Dog
+</span><span class="">  194: 
+</span><span class="">  195: =head1 PUBLIC INTERFACE
+</span><span class="">  196: 
+</span><span class="">  197: =head2 import
+</span><span class="">  198: 
+</span><span class="">  199:     use Sub::Abstract;                   # attribute form -- no arguments
+</span><span class="">  200:     use Sub::Abstract qw(speak eat);    # declarative form
+</span><span class="">  201: 
+</span><span class="">  202: =head3 Purpose
 </span><span class="">  203: 
-</span><span class="">  204: 	# Validate every name before touching the stash (fail-fast, all-or-nothing).
-</span><span class="">  205: 	for my $sub_name (@subs) {
-</span><span class="">  206: 		my $check = (defined $sub_name &amp;&amp; !ref $sub_name) ? $sub_name : q{};
-</span><span class="">  207: 		eval {
-</span><span class="">  208: 			validate_strict(
-</span><span class="">  209: 				schema =&gt; $SUB_NAME_SCHEMA,
-</span><span class="">  210: 				input  =&gt; { name =&gt; $check },
-</span><span class="">  211: 			);
-</span><span class="">  212: 		};
-</span><span class="">  213: 		croak &quot;$SELF-&gt;import: &#39;$check&#39; is not a valid Perl identifier&quot; if $@;
-</span><span class="">  214: 	}
-</span><span class="">  215: 
-</span><span class="">  216: 	# Schedule or immediately apply wrapping depending on compile phase.
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 218 → 224</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 218 → 0</span></span>  217: 	my $owner_pkg = caller;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  218: 	if ($_post_check) {
+</span><span class="">  204: With B&lt;no arguments&gt;: loads the module and makes the C&lt;:Abstract&gt; attribute
+</span><span class="">  205: globally available via C&lt;UNIVERSAL&gt;.  No stash entries are modified.
+</span><span class="">  206: 
+</span><span class="">  207: With B&lt;one or more method names&gt;: installs abstract-croak wrappers for
+</span><span class="">  208: those methods in the calling package.  Wrappers are installed at C&lt;CHECK&gt;
+</span><span class="">  209: time when called during compilation, or immediately when called after
+</span><span class="">  210: C&lt;CHECK&gt; has fired.  Validation is fail-fast and all-or-nothing: if any
+</span><span class="">  211: name is invalid the entire call croaks before touching the stash.
+</span><span class="">  212: 
+</span><span class="">  213: =head3 Arguments
+</span><span class="">  214: 
+</span><span class="">  215: =over 4
+</span><span class="">  216: 
+</span><span class="">  217: =item C&lt;$class&gt; (required, implicit via C&lt;use&gt;)
+</span><span class="">  218: 
+</span><span class="">  219: The invocant.  Always C&lt;&#39;Sub::Abstract&#39;&gt; in normal usage; not validated
+</span><span class="">  220: because Perl&#39;s C&lt;use&gt; mechanism enforces it.
+</span><span class="">  221: 
+</span><span class="">  222: =item C&lt;@methods&gt; (optional)
+</span><span class="">  223: 
+</span><span class="">  224: Zero or more Perl sub names, each matching C&lt;/\A[_a-zA-Z]\w*\z/&gt;.
+</span><span class="">  225: An undef or reference in this list is coerced to the empty string before
+</span><span class="">  226: validation, producing a clear identifier-mismatch error.
+</span><span class="">  227: 
+</span><span class="">  228: =back
+</span><span class="">  229: 
+</span><span class="">  230: =head3 Returns
+</span><span class="">  231: 
+</span><span class="">  232: The class name (C&lt;&#39;Sub::Abstract&#39;&gt;) as a plain string.  All call paths
+</span><span class="">  233: return this value, consistent with the sister modules C&lt;Sub::Private&gt;
+</span><span class="">  234: and C&lt;Sub::Protected&gt;.
+</span><span class="">  235: 
+</span><span class="">  236: =head3 Example
+</span><span class="">  237: 
+</span><span class="">  238:     package MyBase;
+</span><span class="">  239:     use Sub::Abstract qw(render serialize);
+</span><span class="">  240: 
+</span><span class="">  241:     package MyConcrete;
+</span><span class="">  242:     our @ISA = (&#39;MyBase&#39;);
+</span><span class="">  243:     sub render    { ... }    # satisfies render contract
+</span><span class="">  244:     sub serialize { ... }    # satisfies serialize contract
+</span><span class="">  245: 
+</span><span class="">  246:     # MyBase-&gt;new-&gt;render croaks; MyConcrete-&gt;new-&gt;render does not.
+</span><span class="">  247: 
+</span><span class="">  248: =head3 API SPECIFICATION
+</span><span class="">  249: 
+</span><span class="">  250: =head4 Input
+</span><span class="">  251: 
+</span><span class="">  252:     # import() uses positional arguments imposed by Perl&#39;s &quot;use&quot; mechanism;
+</span><span class="">  253:     # named parameters are not applicable here.
+</span><span class="">  254:     # Each element of @methods is validated individually against:
+</span><span class="">  255:     {
+</span><span class="">  256:         name =&gt; {
+</span><span class="">  257:             type  =&gt; &#39;string&#39;,
+</span><span class="">  258:             regex =&gt; qr/\A[_a-zA-Z]\w*\z/,
+</span><span class="">  259:         }
+</span><span class="">  260:     }
+</span><span class="">  261: 
+</span><span class="">  262: =head4 Output
+</span><span class="">  263: 
+</span><span class="">  264:     { type =&gt; &#39;string&#39; }    # always returns the class name (&#39;Sub::Abstract&#39;)
+</span><span class="">  265: 
+</span><span class="">  266: =head3 PSEUDOCODE
+</span><span class="">  267: 
+</span><span class="">  268:     import($class, @methods):
+</span><span class="">  269:         IF @methods is empty
+</span><span class="">  270:             RETURN class name      # attribute form; nothing to install
+</span><span class="">  271:         FOR EACH name in @methods
+</span><span class="">  272:             coerce undef/ref to empty string
+</span><span class="">  273:             validate against /\A[_a-zA-Z]\w*\z/ via validate_strict()
+</span><span class="">  274:             CROAK if invalid       # fail-fast; no stash modification
+</span><span class="">  275:         END FOR
+</span><span class="">  276:         owner_pkg &lt;- caller package
+</span><span class="">  277:         IF post_check flag is set  # CHECK has already fired
+</span><span class="">  278:             FOR EACH name: _process_one(owner_pkg, name)
+</span><span class="">  279:         ELSE                       # still compiling; queue for CHECK
+</span><span class="">  280:             FOR EACH name: push [owner_pkg, name] onto @_pending
+</span><span class="">  281:         END IF
+</span><span class="">  282:         RETURN class name
+</span><span class="">  283: 
+</span><span class="">  284: =head3 MESSAGES
+</span><span class="">  285: 
+</span><span class="">  286:     Message                                              Meaning / Action
+</span><span class="">  287:     -------                                              ----------------
+</span><span class="">  288:     Sub::Abstract-&gt;import: &#39;NAME&#39; is not a valid         NAME failed the identifier regex
+</span><span class="">  289:     Perl identifier                                      /\A[_a-zA-Z]\w*\z/.  Common causes:
+</span><span class="">  290:                                                          leading digit, hyphen, non-ASCII
+</span><span class="">  291:                                                          character, undef passed where a name
+</span><span class="">  292:                                                          was expected, or a reference in the
+</span><span class="">  293:                                                          list.  Action: inspect the argument
+</span><span class="">  294:                                                          list passed to &quot;use Sub::Abstract
+</span><span class="">  295:                                                          qw(...)&quot;.
+</span><span class="">  296: 
+</span><span class="">  297: =cut
+</span><span class="">  298: 
+</span><span class="">  299: sub import {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">300 → 304 → 344</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">300 → 304 → 0</span></span>  300: 	my ($class, @subs) = @_;
+</span><span class="">  301: 
+</span><span class="">  302: 	# Only do stash work when sub names were actually supplied.
+</span><span class="">  303: 	# With no arguments the :Abstract attribute is already globally available.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  304: 	if (@subs) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  305: 		# Validate every name before touching the stash.
+</span><span class="">  306: 		# Fail fast, all-or-nothing: no partial wrapping on bad input.
+</span><span class="">  307: 		for my $sub_name (@subs) {
+</span><span class="">  308: 			# Coerce undef and references to empty string so the validator
+</span><span class="">  309: 			# produces a meaningful &quot;&#39;&#39; is not a valid identifier&quot; message.
+</span><span class="">  310: 			my $check = (defined $sub_name &amp;&amp; !ref $sub_name) ? $sub_name : q{};
+</span><span class="">  311: 
+</span><span class="">  312: 			# BUG FIX: use the &quot;eval { ...; 1 } or do { $err = $@ }&quot; pattern
+</span><span class="">  313: 			# rather than &quot;eval { ... }; croak if $@&quot;.  A DESTROY method fired
+</span><span class="">  314: 			# between the eval and the $@ test can overwrite $@, causing the
+</span><span class="">  315: 			# error to be silently swallowed or a wrong message to be reported.
+</span><span class="">  316: 			my $ok = eval {
+</span><span class="">  317: 				validate_strict(
+</span><span class="">  318: 					schema =&gt; $SUB_NAME_SCHEMA,
+</span><span class="">  319: 					input  =&gt; { name =&gt; $check },
+</span><span class="">  320: 				);
+</span><span class="">  321: 				1;
+</span><span class="">  322: 			};
+</span><span class="">  323: 			croak &quot;$SELF-&gt;import: &#39;$check&#39; is not a valid Perl identifier&quot;
+</span><span class="">  324: 				unless $ok;
+</span><span class="">  325: 		}
+</span><span class="">  326: 
+</span><span class="">  327: 		# Decide whether to wrap immediately or queue for CHECK.
+</span><span class="">  328: 		my $owner_pkg = caller;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  329: 		if ($_post_check) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_218_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_329_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  219: 		_process_one($owner_pkg, $_) for @subs;
-</span><span class="">  220: 	} else {
-</span><span class="">  221: 		push @_pending, [ $owner_pkg, $_ ] for @subs;
-</span><span class="">  222: 	}
-</span><span class="">  223: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 0</span></span>  224: 	return set_return($class, { type =&gt; &#39;string&#39; });
-</span><span class="">  225: }
-</span><span class="">  226: 
-</span><span class="">  227: # -------------------------------------------------------------------
-</span><span class="">  228: # CHECK-TIME PROCESSING
-</span><span class="">  229: # -------------------------------------------------------------------
-</span><span class="">  230: 
-</span><span class="">  231: # Process all declarative wraps queued during import().
-</span><span class="">  232: # After this fires, $_post_check=1 so future import() calls wrap immediately.
-</span><span class="">  233: CHECK {
-</span><span class="">  234: 	$_post_check = 1;
-</span><span class="">  235: 	_process_one(@$_) for @_pending;
-</span><span class="">  236: 	@_pending = ();
-</span><span class="">  237: }
-</span><span class="">  238: 
-</span><span class="">  239: # -------------------------------------------------------------------
-</span><span class="">  240: # PRIVATE SUBROUTINES
-</span><span class="">  241: # -------------------------------------------------------------------
-</span><span class="">  242: 
-</span><span class="">  243: # _process_one
-</span><span class="">  244: # Purpose      : Install an abstract-croak wrapper for a named method in a package.
-</span><span class="">  245: # Entry        : $owner_pkg -- the package that declares the abstract method
-</span><span class="">  246: #                $sub_name  -- the unqualified method name to wrap
-</span><span class="">  247: # Exit status  : Returns normally; the stash entry is replaced with a wrapper.
-</span><span class="">  248: # Side effects : Modifies the package stash for $owner_pkg.
-</span><span class="">  249: # Notes        : Unlike Sub::Private/_process_one, no pre-existence check is done:
-</span><span class="">  250: #                the declarative form is the normal case where no body exists yet.
-</span><span class="">  251: sub _process_one {
-</span><span class="">  252: 	my ($owner_pkg, $sub_name) = @_;
-</span><span class="">  253: 
-</span><span class="">  254: 	_assert_private_caller(&#39;_process_one&#39;)
-</span><span class="">  255: 		unless $BYPASS || ($config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE});
-</span><span class="">  256: 
-</span><span class="">  257: 	no strict &#39;refs&#39;;
-</span><span class="">  258: 	no warnings &#39;redefine&#39;;
-</span><span class="">  259: 	*{&quot;${owner_pkg}::${sub_name}&quot;} = _wrap($owner_pkg, $sub_name);
-</span><span class="">  260: 	return;
-</span><span class="">  261: }
-</span><span class="">  262: 
-</span><span class="">  263: # _wrap
-</span><span class="">  264: # Purpose      : Build an abstract-enforcement wrapper closure.
-</span><span class="">  265: # Entry        : $owner_pkg -- the package that declares the abstract method
-</span><span class="">  266: #                $sub_name  -- the unqualified method name (for error messages)
-</span><span class="">  267: # Exit status  : Returns a new coderef that croaks with a descriptive message
-</span><span class="">  268: #                naming the invocant class, unless a bypass is active.
-</span><span class="">  269: # Notes        : Unlike Sub::Private/_wrap there is no $code argument and no
-</span><span class="">  270: #                goto: the wrapper never delegates because calling an abstract
-</span><span class="">  271: #                method is always an error.  ref($_[0])||$_[0] extracts the
-</span><span class="">  272: #                invocant so the error names the concrete class (e.g. Dog),
-</span><span class="">  273: #                not the abstract base (Animal).
-</span><span class="">  274: sub _wrap {
-</span><span class="">  275: 	my ($owner_pkg, $sub_name) = @_;
-</span><span class="">  276: 
-</span><span class="">  277: 	_assert_private_caller(&#39;_wrap&#39;)
-</span><span class="">  278: 		unless $BYPASS || ($config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE});
-</span><span class="">  279: 
-</span><span class="">  280: 	return sub {
-</span><span class="">  281: 		return if $BYPASS;
-</span><span class="">  282: 		return if $config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE};
-</span><span class="">  283: 		my $invocant = ref($_[0]) || $_[0] // &#39;&lt;undef&gt;&#39;;
-</span><span class="">  284: 		croak &quot;${sub_name}() is an abstract method of ${owner_pkg}&quot;
-</span><span class="">  285: 			. &quot; and must be implemented by ${invocant}&quot;;
-</span><span class="">  286: 	};
-</span><span class="">  287: }
-</span><span class="">  288: 
-</span><span class="">  289: # _assert_private_caller
-</span><span class="">  290: # Purpose      : Croak if a guarded private method was called from outside
-</span><span class="">  291: #                Sub::Abstract.
-</span><span class="">  292: # Entry        : $method_name -- the guarded method name (for error messages)
-</span><span class="">  293: # Exit status  : Returns normally if caller(1) is Sub::Abstract; croaks otherwise.
-</span><span class="">  294: sub _assert_private_caller {
-</span><span class="">  295: 	my ($method_name) = @_;
-</span><span class="">  296: 	my $caller = (caller(1))[0] // q{};
-</span><span class="">  297: 	return if $caller eq $SELF;
-</span><span class="">  298: 	croak &quot;${method_name}() is a private method of $SELF&quot;
-</span><span class="">  299: 		. &quot; and cannot be called from ${caller}&quot;;
-</span><span class="">  300: }
-</span><span class="">  301: 
-</span><span class="">  302: 1;
-</span><span class="">  303: 
-</span><span class="">  304: __END__
-</span><span class="">  305: 
-</span><span class="">  306: =head1 KNOWN LIMITATIONS
-</span><span class="">  307: 
-</span><span class="">  308: =over 4
-</span><span class="">  309: 
-</span><span class="">  310: =item Runtime-only
-</span><span class="">  311: 
-</span><span class="">  312: Checks are runtime only.  There is no compile-time scan of C&lt;@ISA&gt; trees
-</span><span class="">  313: to verify that all abstract methods are implemented -- that would require
-</span><span class="">  314: knowing all subclasses at compile time, which is not possible in general Perl.
-</span><span class="">  315: 
-</span><span class="">  316: =item C&lt;can()&gt; returns the croak-stub
-</span><span class="">  317: 
-</span><span class="">  318: Because the stash entry is replaced with a wrapper closure,
-</span><span class="">  319: C&lt;&lt; Animal-&gt;can(&#39;speak&#39;) &gt;&gt; returns the wrapper (truthy) rather than
-</span><span class="">  320: C&lt;undef&gt;.  A future release may add a caller-aware C&lt;can()&gt; override.
-</span><span class="">  321: 
-</span><span class="">  322: =item UNIVERSAL namespace pollution
-</span><span class="">  323: 
-</span><span class="">  324: The C&lt;:Abstract&gt; attribute is installed in C&lt;UNIVERSAL&gt;, which means
-</span><span class="">  325: C&lt;UNIVERSAL::Abstract&gt; is added to the global namespace.
-</span><span class="">  326: 
-</span><span class="">  327: =item Not for Moo/Moose
-</span><span class="">  328: 
-</span><span class="">  329: Moo and Moose handle required/abstract methods in their own object systems.
-</span><span class="">  330: This module is for plain-Perl OO only.
-</span><span class="">  331: 
-</span><span class="">  332: =back
-</span><span class="">  333: 
-</span><span class="">  334: =head1 DEPENDENCIES
-</span><span class="">  335: 
-</span><span class="">  336: L&lt;Carp&gt; (core),
-</span><span class="">  337: L&lt;Attribute::Handlers&gt; (core since 5.8),
-</span><span class="">  338: L&lt;Readonly&gt;,
-</span><span class="">  339: L&lt;Params::Validate::Strict&gt;,
-</span><span class="">  340: L&lt;Return::Set&gt;.
-</span><span class="">  341: 
-</span><span class="">  342: =head1 SEE ALSO
-</span><span class="">  343: 
-</span><span class="">  344: =over 4
-</span><span class="">  345: 
-</span><span class="">  346: =item * L&lt;Test Dashboard|https://nigelhorne.github.io/Sub-Abstract/coverage/&gt;
-</span><span class="">  347: 
-</span><span class="">  348: =item * L&lt;Sub::Private&gt;
-</span><span class="">  349: 
-</span><span class="">  350: Sister module enforcing strictly private (owner-only) access.
-</span><span class="">  351: 
-</span><span class="">  352: =item * L&lt;Sub::Protected&gt;
-</span><span class="">  353: 
-</span><span class="">  354: Sister module enforcing protected (owner + subclass) access.
-</span><span class="">  355: 
-</span><span class="">  356: =back
-</span><span class="">  357: 
-</span><span class="">  358: =head1 PUBLIC VARIABLES
-</span><span class="">  359: 
-</span><span class="">  360: =head2 C&lt;$BYPASS&gt;
-</span><span class="">  361: 
-</span><span class="">  362: Set to a true value to disable the abstract-method croak for all wrapped
-</span><span class="">  363: subs.  Use C&lt;local&gt; in tests:
-</span><span class="">  364: 
-</span><span class="">  365:     local $Sub::Abstract::BYPASS = 1;
-</span><span class="">  366: 
-</span><span class="">  367: =head2 C&lt;%config&gt;
-</span><span class="">  368: 
-</span><span class="">  369: =over 4
-</span><span class="">  370: 
-</span><span class="">  371: =item C&lt;harness_bypass&gt; (default: 1)
-</span><span class="">  372: 
-</span><span class="">  373: When true, the abstract-method croak is suppressed whenever
-</span><span class="">  374: C&lt;$ENV{HARNESS_ACTIVE}&gt; is set (the convention used by L&lt;Test::Harness&gt;/prove).
-</span><span class="">  375: Set to 0 to test enforcement from within a test harness.
-</span><span class="">  376: 
-</span><span class="">  377: =back
-</span><span class="">  378: 
-</span><span class="">  379: =cut
-</span><span class="">  380: 
-</span><span class="">  381: =head1 FORMAL SPECIFICATION
-</span><span class="">  382: 
-</span><span class="">  383: The following Z-notation schemas formally specify the C&lt;AbstractCroak&gt;
-</span><span class="">  384: operation.
-</span><span class="">  385: 
-</span><span class="">  386:     -- Type abbreviations
-</span><span class="">  387:     Package  == seq CHAR     -- a non-empty Perl package name string
-</span><span class="">  388:     SubName  == seq CHAR     -- a Perl identifier string
-</span><span class="">  389: 
-</span><span class="">  390:     -- System state
-</span><span class="">  391:     +-Registry-------------------------------------------+
-</span><span class="">  392:     | abstract  : P (Package x SubName)                  |
-</span><span class="">  393:     | bypass    : BOOL                                   |
-</span><span class="">  394:     | config    : { harness_bypass : BOOL }              |
-</span><span class="">  395:     +----------------------------------------------------+
-</span><span class="">  396: 
-</span><span class="">  397:     -- Initial state
-</span><span class="">  398:     +-InitRegistry---------------------------------------+
-</span><span class="">  399:     | Registry                                           |
-</span><span class="">  400:     |----------------------------------------------------|
-</span><span class="">  401:     | abstract  = {}                                     |
-</span><span class="">  402:     | bypass    = false                                  |
-</span><span class="">  403:     | config    = { harness_bypass |-&gt; true }            |
-</span><span class="">  404:     +----------------------------------------------------+
-</span><span class="">  405: 
-</span><span class="">  406:     -- Bypass predicate
-</span><span class="">  407:     bypass_active(R) &lt;=&gt;
-</span><span class="">  408:         R.bypass or (R.config.harness_bypass and HARNESS_ACTIVE)
-</span><span class="">  409: 
-</span><span class="">  410:     -- AbstractCroak: fires when the wrapper is reached (no override in MRO)
-</span><span class="">  411:     +-AbstractCroak--------------------------------------+
-</span><span class="">  412:     | Xi-Registry                                        |
-</span><span class="">  413:     | invocant? : Package                                |
-</span><span class="">  414:     | owner?    : Package                                |
-</span><span class="">  415:     | name?     : SubName                                |
-</span><span class="">  416:     |----------------------------------------------------|
-</span><span class="">  417:     | (owner?, name?) in abstract                        |
-</span><span class="">  418:     | not bypass_active =&gt;                               |
-</span><span class="">  419:     |   croak(&quot;name?()&quot; ++ &quot; is an abstract method of &quot; |
-</span><span class="">  420:     |          ++ owner? ++ &quot; and must be implemented by&quot;|
-</span><span class="">  421:     |          ++ invocant?)                             |
-</span><span class="">  422:     +----------------------------------------------------+
-</span><span class="">  423: 
-</span><span class="">  424:     -- Key difference from Sub::Private / Sub::Protected:
-</span><span class="">  425:     --   No caller check is performed.  The wrapper always croaks
-</span><span class="">  426:     --   because reaching it means no subclass provided an implementation.
-</span><span class="">  427: 
-</span><span class="">  428: =head1 AUTHOR
-</span><span class="">  429: 
-</span><span class="">  430: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  431: 
-</span><span class="">  432: =head1 LICENCE AND COPYRIGHT
-</span><span class="">  433: 
-</span><span class="">  434: Copyright 2026 Nigel Horne.
-</span><span class="">  435: 
-</span><span class="">  436: Usage is subject to the GPL2 licence terms.
-</span><span class="">  437: If you use it, please let me know.
-</span><span class="">  438: 
-</span><span class="">  439: =cut
+<span class="">  330: 			# CHECK has already fired: install wrappers directly into the stash.
+</span><span class="">  331: 			for my $sub_name (@subs) {
+</span><span class="">  332: 				_process_one($owner_pkg, $sub_name);
+</span><span class="">  333: 			}
+</span><span class="">  334: 		}
+</span><span class="">  335: 		else {
+</span><span class="">  336: 			# Still in compilation: queue each pair for CHECK to drain.
+</span><span class="">  337: 			for my $sub_name (@subs) {
+</span><span class="">  338: 				push @_pending, [ $owner_pkg, $sub_name ];
+</span><span class="">  339: 			}
+</span><span class="">  340: 		}
+</span><span class="">  341: 	}
+</span><span class="">  342: 
+</span><span class="">  343: 	# Single return path: consistent with Sub::Private and Sub::Protected.
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">344 → 344 → 0</span></span>  344: 	return set_return($class, { type =&gt; &#39;string&#39; });
+</span><span class="">  345: }
+</span><span class="">  346: 
+</span><span class="">  347: # ---------------------------------------------------------------------------
+</span><span class="">  348: # CHECK-TIME PROCESSING
+</span><span class="">  349: # ---------------------------------------------------------------------------
+</span><span class="">  350: 
+</span><span class="">  351: # CHECK block.
+</span><span class="">  352: # Purpose      : Drain @_pending (all import() calls queued during compilation)
+</span><span class="">  353: #                and mark the module post-CHECK so future import() calls wrap
+</span><span class="">  354: #                immediately rather than queuing.
+</span><span class="">  355: # Ordering note: $_post_check is set to 1 BEFORE @_pending is drained.
+</span><span class="">  356: #                This means if _process_one were ever to trigger import()
+</span><span class="">  357: #                (it does not in practice), that nested import() would call
+</span><span class="">  358: #                _process_one directly rather than re-queuing.
+</span><span class="">  359: #                The _assert_private_caller guard inside _process_one is
+</span><span class="">  360: #                satisfied because this CHECK block is compiled inside
+</span><span class="">  361: #                Sub::Abstract: caller(1) resolves to Sub::Abstract.
+</span><span class="">  362: CHECK {
+</span><span class="">  363: 	$_post_check = 1;
+</span><span class="">  364: 	_process_one(@{$_}) for @_pending;
+</span><span class="">  365: 	@_pending = ();
+</span><span class="">  366: }
+</span><span class="">  367: 
+</span><span class="">  368: # ---------------------------------------------------------------------------
+</span><span class="">  369: # PRIVATE SUBROUTINES
+</span><span class="">  370: # ---------------------------------------------------------------------------
+</span><span class="">  371: 
+</span><span class="">  372: # _process_one
+</span><span class="">  373: # Purpose      : Install an abstract-croak wrapper for one named method in
+</span><span class="">  374: #                a given package.
+</span><span class="">  375: # Entry        : $owner_pkg -- the package declaring the abstract method
+</span><span class="">  376: #                $sub_name  -- unqualified method name (a valid identifier)
+</span><span class="">  377: # Exit status  : Returns nothing (void); the package stash is modified.
+</span><span class="">  378: # Side effects : Overwrites *{&quot;${owner_pkg}::${sub_name}&quot;} with the closure
+</span><span class="">  379: #                returned by _wrap().  Creates the glob entry if it does not
+</span><span class="">  380: #                yet exist (the declarative form requires no pre-existing stub).
+</span><span class="">  381: # Notes        : Unlike Sub::Private::_process_one there is no pre-existence
+</span><span class="">  382: #                check: abstract methods in the declarative form have no body.
+</span><span class="">  383: #                Protected by _assert_private_caller (via the bypass guard)
+</span><span class="">  384: #                so that external callers cannot invoke this directly.
+</span><span class="">  385: sub _process_one {
+</span><span class="">  386: 	my ($owner_pkg, $sub_name) = @_;
+</span><span class="">  387: 
+</span><span class="">  388: 	# Guard: only Sub::Abstract itself may call this.
+</span><span class="">  389: 	# Bypass is active under the test harness or when $BYPASS is set.
+</span><span class="">  390: 	_assert_private_caller(&#39;_process_one&#39;)
+</span><span class="">  391: 		unless $BYPASS || ($config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE});
+</span><span class="">  392: 
+</span><span class="">  393: 	# Install the wrapper; suppress redefine warnings for the attribute form.
+</span><span class="">  394: 	no strict &#39;refs&#39;;
+</span><span class="">  395: 	no warnings &#39;redefine&#39;;
+</span><span class="">  396: 	*{&quot;${owner_pkg}::${sub_name}&quot;} = _wrap($owner_pkg, $sub_name);
+</span><span class="">  397: 	return;
+</span><span class="">  398: }
+</span><span class="">  399: 
+</span><span class="">  400: # _wrap
+</span><span class="">  401: # Purpose      : Build and return the abstract-enforcement closure for one
+</span><span class="">  402: #                method.  The closure croaks with a message naming both the
+</span><span class="">  403: #                abstract owner package and the concrete invocant class.
+</span><span class="">  404: # Entry        : $owner_pkg -- the package declaring the abstract method
+</span><span class="">  405: #                $sub_name  -- unqualified method name (for error messages)
+</span><span class="">  406: # Exit status  : Returns a new CODE ref (the enforcement wrapper).
+</span><span class="">  407: # Side effects : None.  The closure captures $owner_pkg and $sub_name by
+</span><span class="">  408: #                value; $BYPASS and %config are read at call time (not
+</span><span class="">  409: #                capture time), so runtime changes to them take effect.
+</span><span class="">  410: # Notes        : No $code argument and no delegation (unlike Sub::Private).
+</span><span class="">  411: #                Calling an abstract method is always an error; there is
+</span><span class="">  412: #                nothing to delegate to.
+</span><span class="">  413: #                Invocant extraction: (ref($_[0]) || $_[0]) // &#39;&lt;undef&gt;&#39;
+</span><span class="">  414: #                  ref()   -- for blessed objects: returns the concrete class
+</span><span class="">  415: #                  $_[0]   -- for class-method calls: the package name string
+</span><span class="">  416: #                  &#39;&lt;undef&gt;&#39; -- guard against a completely absent invocant
+</span><span class="">  417: #                $BYPASS is consulted first (short-circuit ||); setting
+</span><span class="">  418: #                harness_bypass=0 does NOT re-enable enforcement while
+</span><span class="">  419: #                $BYPASS is truthy (see KNOWN LIMITATIONS).
+</span><span class="">  420: sub _wrap {
+</span><span class="">  421: 	my ($owner_pkg, $sub_name) = @_;
+</span><span class="">  422: 
+</span><span class="">  423: 	# Guard: same bypass semantics as _process_one.
+</span><span class="">  424: 	_assert_private_caller(&#39;_wrap&#39;)
+</span><span class="">  425: 		unless $BYPASS || ($config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE});
+</span><span class="">  426: 
+</span><span class="">  427: 	# Return a closure that enforces the abstract contract at call time.
+</span><span class="">  428: 	return sub {
+</span><span class="">  429: 		return if $BYPASS;
+</span><span class="">  430: 		return if $config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE};
+</span><span class="">  431: 		my $invocant = ref($_[0]) || $_[0] // &#39;&lt;undef&gt;&#39;;
+</span><span class="">  432: 		croak &quot;${sub_name}() is an abstract method of ${owner_pkg}&quot;
+</span><span class="">  433: 			. &quot; and must be implemented by ${invocant}&quot;;
+</span><span class="">  434: 	};
+</span><span class="">  435: }
+</span><span class="">  436: 
+</span><span class="">  437: # _assert_private_caller
+</span><span class="">  438: # Purpose      : Croak if the guarded private method (_wrap or _process_one)
+</span><span class="">  439: #                was invoked from outside Sub::Abstract.
+</span><span class="">  440: # Entry        : $method_name -- the name of the guarded method (used only
+</span><span class="">  441: #                in the error message; not validated).
+</span><span class="">  442: # Exit status  : Returns normally when the immediate caller of the guarded
+</span><span class="">  443: #                function is Sub::Abstract.  Croaks otherwise.
+</span><span class="">  444: # Side effects : May croak.
+</span><span class="">  445: # Notes        : Uses caller(1), not caller(0).
+</span><span class="">  446: #                Inside _assert_private_caller:
+</span><span class="">  447: #                  caller(0) = Sub::Abstract (this sub&#39;s own frame)
+</span><span class="">  448: #                  caller(1) = the package that called _wrap/_process_one
+</span><span class="">  449: #                For calls from CHECK{} or UNIVERSAL::Abstract (both compiled
+</span><span class="">  450: #                inside Sub::Abstract), caller(1) = Sub::Abstract -- allowed.
+</span><span class="">  451: #                For direct external calls to _wrap or _process_one, caller(1)
+</span><span class="">  452: #                is the calling package -- denied unless bypass is active.
+</span><span class="">  453: #                The &#39;//&#39; fallback to q{} handles the pathological case where
+</span><span class="">  454: #                caller(1) returns undef (top-level call outside any sub);
+</span><span class="">  455: #                this path is practically unreachable in production.
+</span><span class="">  456: #                This guard is a lint tool, not a security fence: code that
+</span><span class="">  457: #                injects a sub into the Sub::Abstract namespace can defeat it
+</span><span class="">  458: #                (see KNOWN LIMITATIONS).
+</span><span class="">  459: sub _assert_private_caller {
+</span><span class="">  460: 	my $method_name = $_[0];
+</span><span class="">  461: 	my $caller = (caller(1))[0] // q{};
+</span><span class="">  462: 
+</span><span class="">  463: 	# Single conditional croak; one return at the bottom.
+</span><span class="">  464: 	croak &quot;${method_name}() is a private method of $SELF&quot;
+</span><span class="">  465: 		. &quot; and cannot be called from ${caller}&quot;
+</span><span class="">  466: 		unless $caller eq $SELF;
+</span><span class="">  467: 	return;
+</span><span class="">  468: }
+</span><span class="">  469: 
+</span><span class="">  470: 1;
+</span><span class="">  471: 
+</span><span class="">  472: __END__
+</span><span class="">  473: 
+</span><span class="">  474: =head1 KNOWN LIMITATIONS
+</span><span class="">  475: 
+</span><span class="">  476: =over 4
+</span><span class="">  477: 
+</span><span class="">  478: =item Runtime-only enforcement
+</span><span class="">  479: 
+</span><span class="">  480: Checks are runtime only.  There is no compile-time scan of C&lt;@ISA&gt; trees
+</span><span class="">  481: to verify that all abstract methods are implemented -- that would require
+</span><span class="">  482: knowing all subclasses at compile time, which is not possible in general
+</span><span class="">  483: Perl.  A future C&lt;use Sub::Abstract -verify&gt; pragma (walking C&lt;@ISA&gt; at
+</span><span class="">  484: C&lt;INIT&gt; time) is under consideration.
+</span><span class="">  485: 
+</span><span class="">  486: =item C&lt;can()&gt; returns the croak-stub
+</span><span class="">  487: 
+</span><span class="">  488: Because the stash entry is replaced with a wrapper closure,
+</span><span class="">  489: C&lt;&lt; Animal-&gt;can(&#39;speak&#39;) &gt;&gt; returns the wrapper (a truthy CODE ref) rather
+</span><span class="">  490: than C&lt;undef&gt;.  Code that duck-types on C&lt;can()&gt; will silently believe the
+</span><span class="">  491: abstract method is implemented and then crash when it is called.  A future
+</span><span class="">  492: release may add a caller-aware C&lt;can()&gt; override.
+</span><span class="">  493: 
+</span><span class="">  494: =item UNIVERSAL namespace pollution
+</span><span class="">  495: 
+</span><span class="">  496: The C&lt;:Abstract&gt; attribute is installed in C&lt;UNIVERSAL&gt;, which means
+</span><span class="">  497: C&lt;UNIVERSAL::Abstract&gt; is added to the global namespace for the lifetime of
+</span><span class="">  498: the process.  Any code loaded after C&lt;Sub::Abstract&gt; can use C&lt;:Abstract&gt;
+</span><span class="">  499: without a C&lt;use Sub::Abstract&gt; statement, which can be surprising in large
+</span><span class="">  500: codebases.
+</span><span class="">  501: 
+</span><span class="">  502: =item Bypass precedence
+</span><span class="">  503: 
+</span><span class="">  504: The enforcement guard is C&lt;$BYPASS || ($config{harness_bypass} &amp;&amp;
+</span><span class="">  505: $ENV{HARNESS_ACTIVE})&gt;.  Because C&lt;$BYPASS&gt; is checked first with
+</span><span class="">  506: short-circuit C&lt;||&gt;, setting C&lt;$config{harness_bypass} = 0&gt; does B&lt;not&gt;
+</span><span class="">  507: re-enable enforcement when C&lt;$BYPASS&gt; is truthy.  To test enforcement
+</span><span class="">  508: inside a harness you must set both:
+</span><span class="">  509: 
+</span><span class="">  510:     local $Sub::Abstract::BYPASS = 0;
+</span><span class="">  511:     local $Sub::Abstract::config{harness_bypass} = 0;
+</span><span class="">  512: 
+</span><span class="">  513: =item Thread safety
+</span><span class="">  514: 
+</span><span class="">  515: C&lt;@_pending&gt; and C&lt;$_post_check&gt; are package-global lexicals.  Concurrent
+</span><span class="">  516: threads loading modules that call C&lt;import()&gt; before C&lt;CHECK&gt; fires may
+</span><span class="">  517: race on these variables.  This module is not safe for concurrent use
+</span><span class="">  518: across threads during the compilation phase.
+</span><span class="">  519: 
+</span><span class="">  520: =item DESTROY and Perl 5.42+
+</span><span class="">  521: 
+</span><span class="">  522: On Perl 5.42 and later, exceptions thrown inside C&lt;DESTROY&gt; are not
+</span><span class="">  523: propagated to the caller -- Perl emits a C&lt;(in cleanup)&gt; message to STDERR
+</span><span class="">  524: instead.  If a class marks C&lt;DESTROY&gt; as abstract, the enforcement croak
+</span><span class="">  525: will be silently discarded rather than propagating.  Test with C&lt;lives_ok&gt;,
+</span><span class="">  526: not C&lt;throws_ok&gt;, for C&lt;DESTROY&gt; paths on modern Perl.
+</span><span class="">  527: 
+</span><span class="">  528: =item _assert_private_caller is a lint tool, not a security fence
+</span><span class="">  529: 
+</span><span class="">  530: Injecting a subroutine directly into the C&lt;Sub::Abstract&gt; namespace (via
+</span><span class="">  531: glob assignment C&lt;*Sub::Abstract::injected = sub { ... }&gt;) defeats the
+</span><span class="">  532: C&lt;caller(1)&gt; check because the injected sub runs inside the C&lt;Sub::Abstract&gt;
+</span><span class="">  533: package.  The guard deters accidental misuse; it does not prevent deliberate
+</span><span class="">  534: circumvention.
+</span><span class="">  535: 
+</span><span class="">  536: =item Not for Moo/Moose
+</span><span class="">  537: 
+</span><span class="">  538: Moo and Moose handle required/abstract methods in their own object systems.
+</span><span class="">  539: This module is for plain-Perl OO only.
+</span><span class="">  540: 
+</span><span class="">  541: =back
+</span><span class="">  542: 
+</span><span class="">  543: =head1 BUGS
+</span><span class="">  544: 
+</span><span class="">  545: =over 4
+</span><span class="">  546: 
+</span><span class="">  547: =item eval/$@ clobber race (fixed in current release)
+</span><span class="">  548: 
+</span><span class="">  549: The original validation loop used:
+</span><span class="">  550: 
+</span><span class="">  551:     eval { validate_strict(...) };
+</span><span class="">  552:     croak &quot;...&quot; if $@;
+</span><span class="">  553: 
+</span><span class="">  554: A C&lt;DESTROY&gt; method invoked between the C&lt;eval&gt; and the C&lt;if ($@)&gt; test
+</span><span class="">  555: could overwrite C&lt;$@&gt;, causing the validation error to be silently dropped
+</span><span class="">  556: or replaced with an unrelated message.
+</span><span class="">  557: 
+</span><span class="">  558: B&lt;Fix:&gt; the current code uses:
+</span><span class="">  559: 
+</span><span class="">  560:     my $ok = eval { validate_strict(...); 1 };
+</span><span class="">  561:     croak &quot;...&quot; unless $ok;
+</span><span class="">  562: 
+</span><span class="">  563: The success flag C&lt;$ok&gt; is set inside the C&lt;eval&gt; itself and is unaffected
+</span><span class="">  564: by any C&lt;DESTROY&gt; calls that occur after the C&lt;eval&gt; exits.
+</span><span class="">  565: 
+</span><span class="">  566: =item Implicit $_ in postfix for (fixed in current release)
+</span><span class="">  567: 
+</span><span class="">  568: The original dispatch branches used implicit C&lt;$_&gt; as the iterator:
+</span><span class="">  569: 
+</span><span class="">  570:     _process_one($owner_pkg, $_) for @subs;
+</span><span class="">  571:     push @_pending, [ $owner_pkg, $_ ] for @subs;
+</span><span class="">  572: 
+</span><span class="">  573: While postfix C&lt;for&gt; does localize C&lt;$_&gt;, the implicit iterator makes it
+</span><span class="">  574: harder to audit whether the caller&#39;s C&lt;$_&gt; is preserved and obscures the
+</span><span class="">  575: intent.
+</span><span class="">  576: 
+</span><span class="">  577: B&lt;Fix:&gt; both loops now use explicit named variables:
+</span><span class="">  578: 
+</span><span class="">  579:     for my $sub_name (@subs) { _process_one($owner_pkg, $sub_name) }
+</span><span class="">  580:     for my $sub_name (@subs) { push @_pending, [ $owner_pkg, $sub_name ] }
+</span><span class="">  581: 
+</span><span class="">  582: =item Duplicate set_return call (fixed in current release)
+</span><span class="">  583: 
+</span><span class="">  584: The original C&lt;import()&gt; called C&lt;set_return($class, ...)&gt; on two separate
+</span><span class="">  585: return paths (an early return for the no-args case and the normal return).
+</span><span class="">  586: This is a minor inefficiency and a maintenance hazard: any future change to
+</span><span class="">  587: the return schema must be applied in two places.
+</span><span class="">  588: 
+</span><span class="">  589: B&lt;Fix:&gt; C&lt;import()&gt; now has a single C&lt;return set_return(...)&gt; statement at
+</span><span class="">  590: the end; the no-args case falls through to it via a conditional block.
+</span><span class="">  591: 
+</span><span class="">  592: =back
+</span><span class="">  593: 
+</span><span class="">  594: =head1 FORMAL SPECIFICATION
+</span><span class="">  595: 
+</span><span class="">  596: The following schemas formally specify the C&lt;AbstractCroak&gt; operation
+</span><span class="">  597: and the compile-time registration state.
+</span><span class="">  598: 
+</span><span class="">  599:     -- Type abbreviations
+</span><span class="">  600:     Package  == seq CHAR     -- a non-empty Perl package name string
+</span><span class="">  601:     SubName  == seq CHAR     -- a Perl identifier string
+</span><span class="">  602: 
+</span><span class="">  603:     -- System state (runtime)
+</span><span class="">  604:     +-Registry--------------------------------------------+
+</span><span class="">  605:     | abstract  : P (Package x SubName)                   |
+</span><span class="">  606:     | bypass    : BOOL                                    |
+</span><span class="">  607:     | config    : { harness_bypass : BOOL }               |
+</span><span class="">  608:     +-----------------------------------------------------+
+</span><span class="">  609: 
+</span><span class="">  610:     -- Initial state
+</span><span class="">  611:     +-InitRegistry----------------------------------------+
+</span><span class="">  612:     | Registry                                            |
+</span><span class="">  613:     |-----------------------------------------------------|
+</span><span class="">  614:     | abstract  = {}                                      |
+</span><span class="">  615:     | bypass    = false                                   |
+</span><span class="">  616:     | config    = { harness_bypass |-&gt; true }             |
+</span><span class="">  617:     +-----------------------------------------------------+
+</span><span class="">  618: 
+</span><span class="">  619:     -- Bypass predicate (OR logic; $BYPASS checked first)
+</span><span class="">  620:     bypass_active(R) &lt;=&gt;
+</span><span class="">  621:         R.bypass
+</span><span class="">  622:         or (R.config.harness_bypass and HARNESS_ACTIVE)
+</span><span class="">  623: 
+</span><span class="">  624:     -- AbstractCroak: fires when the wrapper is reached
+</span><span class="">  625:     -- (Perl MRO guarantees no subclass override exists)
+</span><span class="">  626:     +-AbstractCroak---------------------------------------+
+</span><span class="">  627:     | Xi-Registry                                         |
+</span><span class="">  628:     | invocant? : Package                                 |
+</span><span class="">  629:     | owner?    : Package                                 |
+</span><span class="">  630:     | name?     : SubName                                 |
+</span><span class="">  631:     |-----------------------------------------------------|
+</span><span class="">  632:     | (owner?, name?) in abstract                         |
+</span><span class="">  633:     | not bypass_active =&gt;                                |
+</span><span class="">  634:     |   croak(&quot;name?()&quot; ++ &quot; is an abstract method of &quot;  |
+</span><span class="">  635:     |          ++ owner? ++ &quot; and must be implemented by&quot; |
+</span><span class="">  636:     |          ++ invocant?)                              |
+</span><span class="">  637:     +-----------------------------------------------------+
+</span><span class="">  638: 
+</span><span class="">  639:     -- Key difference from Sub::Private / Sub::Protected:
+</span><span class="">  640:     --   No caller check is performed inside the wrapper.
+</span><span class="">  641:     --   Reaching the wrapper already proves no subclass
+</span><span class="">  642:     --   provided an implementation (MRO guarantees this).
+</span><span class="">  643: 
+</span><span class="">  644: =head1 DEPENDENCIES
+</span><span class="">  645: 
+</span><span class="">  646: L&lt;Carp&gt; (core),
+</span><span class="">  647: L&lt;Attribute::Handlers&gt; (core since 5.8),
+</span><span class="">  648: L&lt;Readonly&gt;,
+</span><span class="">  649: L&lt;Params::Validate::Strict&gt;,
+</span><span class="">  650: L&lt;Return::Set&gt;.
+</span><span class="">  651: 
+</span><span class="">  652: =head1 SEE ALSO
+</span><span class="">  653: 
+</span><span class="">  654: =over 4
+</span><span class="">  655: 
+</span><span class="">  656: =item * L&lt;Test Dashboard|https://nigelhorne.github.io/Sub-Abstract/coverage/&gt;
+</span><span class="">  657: 
+</span><span class="">  658: =item * L&lt;Sub::Private&gt;
+</span><span class="">  659: 
+</span><span class="">  660: Sister module enforcing strictly private (owner-only) access.
+</span><span class="">  661: 
+</span><span class="">  662: =item * L&lt;Sub::Protected&gt;
+</span><span class="">  663: 
+</span><span class="">  664: Sister module enforcing protected (owner + subclass) access.
+</span><span class="">  665: 
+</span><span class="">  666: =back
+</span><span class="">  667: 
+</span><span class="">  668: =head1 PUBLIC VARIABLES
+</span><span class="">  669: 
+</span><span class="">  670: =head2 C&lt;$BYPASS&gt;
+</span><span class="">  671: 
+</span><span class="">  672: Set to a true value to disable the abstract-method croak for all wrapped
+</span><span class="">  673: subs.  Use C&lt;local&gt; in tests:
+</span><span class="">  674: 
+</span><span class="">  675:     local $Sub::Abstract::BYPASS = 1;
+</span><span class="">  676: 
+</span><span class="">  677: B&lt;Warning:&gt; any truthy value (including strings like C&lt;&quot;false&quot;&gt;, C&lt;&quot;off&quot;&gt;,
+</span><span class="">  678: C&lt;&quot;no&quot;&gt;) enables bypass, because Perl&#39;s truthiness is not English.
+</span><span class="">  679: 
+</span><span class="">  680: =head2 C&lt;%config&gt;
+</span><span class="">  681: 
+</span><span class="">  682: =over 4
+</span><span class="">  683: 
+</span><span class="">  684: =item C&lt;harness_bypass&gt; (default: 1)
+</span><span class="">  685: 
+</span><span class="">  686: When true, the abstract-method croak is suppressed whenever
+</span><span class="">  687: C&lt;$ENV{HARNESS_ACTIVE}&gt; is set (the convention used by L&lt;Test::Harness&gt;/prove).
+</span><span class="">  688: Set to 0 to test enforcement from within a test harness.
+</span><span class="">  689: 
+</span><span class="">  690: Note that C&lt;$BYPASS&gt; takes precedence: see L&lt;/Bypass precedence&gt; under
+</span><span class="">  691: KNOWN LIMITATIONS.
+</span><span class="">  692: 
+</span><span class="">  693: =back
+</span><span class="">  694: 
+</span><span class="">  695: =head1 AUTHOR
+</span><span class="">  696: 
+</span><span class="">  697: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  698: 
+</span><span class="">  699: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  700: 
+</span><span class="">  701: Copyright 2026 Nigel Horne.
+</span><span class="">  702: 
+</span><span class="">  703: Usage is subject to the GPL2 licence terms.
+</span><span class="">  704: If you use it, please let me know.
+</span><span class="">  705: 
+</span><span class="">  706: =cut
 </span></pre>
 
 <script>
