@@ -12,8 +12,11 @@ t/basic.t
 t/bypass.t
 t/declarative.t
 t/edge_cases.t
-t/subclass.t
-t/function.t
-t/integration.t
+t/eof.t
+t/eol.t
 t/extended_tests.t
+t/function.t
+t/mutant_killers.t
+t/integration.t
+t/subclass.t
 t/unit.t
