@@ -1,0 +1,248 @@
+{
+   "runs" : [
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106480.33162,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "-e",
+         "start" : 1781106474.52026,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106474.66566,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "-e",
+         "start" : 1781106474.66551,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106474.9827,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/00-load.t",
+         "start" : 1781106474.92508,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106475.32304,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/attribute.t",
+         "start" : 1781106475.31945,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106475.66401,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/basic.t",
+         "start" : 1781106475.65983,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106476.00738,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/bypass.t",
+         "start" : 1781106476.00232,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106476.3517,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/declarative.t",
+         "start" : 1781106476.34768,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106476.86585,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/edge_cases.t",
+         "start" : 1781106476.69827,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106477.25583,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/eof.t",
+         "start" : 1781106477.2555,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106477.49126,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/eol.t",
+         "start" : 1781106477.49093,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106477.84275,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/extended_tests.t",
+         "start" : 1781106477.79799,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106478.34408,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/function.t",
+         "start" : 1781106478.22886,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106478.89711,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/integration.t",
+         "start" : 1781106478.78918,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106479.3638,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/mutant_killers.t",
+         "start" : 1781106479.3489,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106479.71963,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/subclass.t",
+         "start" : 1781106479.71416,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1781106480.17888,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/unit.t",
+         "start" : 1781106480.06771,
+         "version" : "0.01"
+      }
+   ],
+   "summary" : {
+      "Total" : {
+         "branch" : {
+            "covered" : 18,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 18,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 24,
+            "error" : 1,
+            "percentage" : 96,
+            "total" : 25,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 75,
+            "percentage" : 100,
+            "total" : 75
+         },
+         "subroutine" : {
+            "covered" : 20,
+            "percentage" : 100,
+            "total" : 20
+         },
+         "total" : {
+            "covered" : 137,
+            "error" : 1,
+            "percentage" : 99.2753623188406,
+            "total" : 138,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/Sub/Abstract.pm" : {
+         "branch" : {
+            "covered" : 18,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 18,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 24,
+            "error" : 1,
+            "percentage" : 96,
+            "total" : 25,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 75,
+            "percentage" : 100,
+            "total" : 75
+         },
+         "subroutine" : {
+            "covered" : 20,
+            "percentage" : 100,
+            "total" : 20
+         },
+         "total" : {
+            "covered" : 137,
+            "error" : 1,
+            "percentage" : 99.2753623188406,
+            "total" : 138,
+            "uncoverable" : 0
+         }
+      }
+   }
+}
