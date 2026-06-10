@@ -1,4 +1,42 @@
 Revision history for Sub-Abstract
 
+0.02
+        [Bug fixes]
+        - import(): fix eval/$@ clobber race -- a DESTROY fired between
+          eval { validate_strict() } and if ($@) could silently swallow the
+          validation error; use my $ok = eval { ...; 1 } pattern instead
+        - import(): replace implicit $_ postfix-for iterators with explicit
+          named for-my variables to avoid aliasing ambiguity
+        - import(): remove duplicate set_return() call; single return path now
+
+        [Enhancements]
+        - Add carp alongside croak in Carp import for future non-fatal paths
+        - _assert_private_caller(): simplify to single croak-unless guard
+        - Improve all private-sub comment headers (Purpose/Entry/Exit/
+          Side effects/Notes) for _wrap, _process_one, _assert_private_caller,
+          UNIVERSAL::Abstract, and the CHECK block
+        - Unused positional args in UNIVERSAL::Abstract handler bound to undef
+
+        [Documentation]
+        - import(): add =head3 PSEUDOCODE, API SPECIFICATION (input/output
+          schemas), per-method FORMAL SPECIFICATION (Z notation), and a full
+          MESSAGES table with causes and remediation steps
+        - Add =head1 BUGS section documenting each fixed bug with the original
+          code and the replacement
+        - Expand =head1 KNOWN LIMITATIONS: bypass precedence ($BYPASS takes
+          full priority over harness_bypass=0), thread safety, DESTROY on
+          Perl 5.42+, _assert_private_caller as lint tool not security fence
+        - Promote =head2 FORMAL SPECIFICATION to =head1; consolidate split
+          POD blocks (remove spurious second =cut / re-opened block)
+        - PUBLIC VARIABLES: document bypass precedence and truthy-string gotcha
+        - Bypass section: document that both $BYPASS and harness_bypass must be
+          cleared to test enforcement inside the harness
+
+        [Tests]
+        - t/locales.t: new file; verifies croak core message is bitwise-
+          identical under en_US.UTF-8, de_DE.UTF-8, and zh_CN.UTF-8; documents
+          use_ok incompatibility with CHECK-block modules; GeoIP dimension noted
+          as not applicable
+
 0.01	Wed Jun 10 12:02:36 EDT 2026
         First release
