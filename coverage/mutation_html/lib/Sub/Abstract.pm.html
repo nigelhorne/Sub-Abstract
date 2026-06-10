@@ -1,0 +1,765 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/Sub/Abstract.pm</h1>
+<div class="nav"><a href="../../../index.html">Index</a>
+</div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 100.00%<br>
+TER3 (LCSAJ): 100.0% (5/5)<br>
+Approximate LCSAJ segments: 19<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package Sub::Abstract;
+</span><span class="">    2: 
+</span><span class="">    3: # Minimum Perl version: 5.8 (Attribute::Handlers became core in 5.8)
+</span><span class="">    4: use 5.008;
+</span><span class="">    5: use strict;
+</span><span class="">    6: use warnings;
+</span><span class="">    7: use autodie qw(:all);
+</span><span class="">    8: 
+</span><span class="">    9: use Attribute::Handlers;
+</span><span class="">   10: use Carp              qw(croak);
+</span><span class="">   11: use Readonly;
+</span><span class="">   12: use Params::Validate::Strict 0.33 qw(validate_strict);
+</span><span class="">   13: use Return::Set       qw(set_return);
+</span><span class="">   14: 
+</span><span class="">   15: =head1 NAME
+</span><span class="">   16: 
+</span><span class="">   17: Sub::Abstract - Abstract (virtual) methods for plain-Perl OO
+</span><span class="">   18: 
+</span><span class="">   19: =head1 VERSION
+</span><span class="">   20: 
+</span><span class="">   21: Version 0.01
+</span><span class="">   22: 
+</span><span class="">   23: =cut
+</span><span class="">   24: 
+</span><span class="">   25: our $VERSION = &#39;0.01&#39;;
+</span><span class="">   26: 
+</span><span class="">   27: # ---------------------------------------------------------------------------
+</span><span class="">   28: # Constants
+</span><span class="">   29: # ---------------------------------------------------------------------------
+</span><span class="">   30: 
+</span><span class="">   31: # Self-referential constant: the canonical name of this package.
+</span><span class="">   32: Readonly::Scalar my $SELF =&gt; __PACKAGE__;
+</span><span class="">   33: 
+</span><span class="">   34: # Validation schema for a single Perl sub name passed to import().
+</span><span class="">   35: Readonly::Scalar my $SUB_NAME_SCHEMA =&gt; {
+</span><span class="">   36: 	name =&gt; {
+</span><span class="">   37: 		type  =&gt; &#39;string&#39;,
+</span><span class="">   38: 		regex =&gt; qr/\A[_a-zA-Z]\w*\z/,
+</span><span class="">   39: 	}
+</span><span class="">   40: };
+</span><span class="">   41: 
+</span><span class="">   42: # ---------------------------------------------------------------------------
+</span><span class="">   43: # Public variables
+</span><span class="">   44: # ---------------------------------------------------------------------------
+</span><span class="">   45: 
+</span><span class="">   46: our $BYPASS = 0;
+</span><span class="">   47: 
+</span><span class="">   48: our %config = (
+</span><span class="">   49: 	harness_bypass =&gt; 1,
+</span><span class="">   50: );
+</span><span class="">   51: 
+</span><span class="">   52: # ---------------------------------------------------------------------------
+</span><span class="">   53: # Internal state
+</span><span class="">   54: # ---------------------------------------------------------------------------
+</span><span class="">   55: 
+</span><span class="">   56: # Pending (owner_pkg, sub_name) pairs to be wrapped at CHECK time.
+</span><span class="">   57: # Populated by import(); consumed and cleared by the CHECK block.
+</span><span class="">   58: my @_pending;
+</span><span class="">   59: 
+</span><span class="">   60: # Set to 1 once the CHECK block fires so import() can wrap immediately.
+</span><span class="">   61: my $_post_check = 0;
+</span><span class="">   62: 
+</span><span class="">   63: # -------------------------------------------------------------------
+</span><span class="">   64: # ATTRIBUTE HANDLER
+</span><span class="">   65: # -------------------------------------------------------------------
+</span><span class="">   66: 
+</span><span class="">   67: # Install :Abstract in UNIVERSAL so every package can use it after a
+</span><span class="">   68: # single &quot;use Sub::Abstract&quot;, with no per-package setup required.
+</span><span class="">   69: # ATTR(CODE,CHECK) fires at CHECK time, after all subs are compiled.
+</span><span class="">   70: # The stub body on the decorated sub is required so that Attribute::Handlers
+</span><span class="">   71: # has a CODE ref to work with; the handler replaces it unconditionally.
+</span><span class="">   72: sub UNIVERSAL::Abstract :ATTR(CODE,CHECK) {
+</span><span class="">   73: 	my ($package, $symbol, $referent, $attr, $data, $phase) = @_;
+</span><span class="">   74: 	my $sub_name = *{$symbol}{NAME};
+</span><span class="">   75: 	no warnings &#39;redefine&#39;;
+</span><span class="">   76: 	*{$symbol} = _wrap($package, $sub_name);
+</span><span class="">   77: 	return;
+</span><span class="">   78: }
+</span><span class="">   79: 
+</span><span class="">   80: # -------------------------------------------------------------------
+</span><span class="">   81: # PUBLIC INTERFACE
+</span><span class="">   82: # -------------------------------------------------------------------
+</span><span class="">   83: 
+</span><span class="">   84: =head1 SYNOPSIS
+</span><span class="">   85: 
+</span><span class="">   86:     package Animal;
+</span><span class="">   87:     use Sub::Abstract;
+</span><span class="">   88: 
+</span><span class="">   89:     # Attribute form (stub body required for Attribute::Handlers)
+</span><span class="">   90:     sub speak :Abstract { }
+</span><span class="">   91:     sub eat   :Abstract { }
+</span><span class="">   92: 
+</span><span class="">   93:     # Declarative form (no stub body needed)
+</span><span class="">   94:     use Sub::Abstract qw(speak eat);
+</span><span class="">   95: 
+</span><span class="">   96:     package Dog;
+</span><span class="">   97:     our @ISA = (&#39;Animal&#39;);
+</span><span class="">   98:     sub speak { &#39;Woof&#39; }    # satisfies the contract; wrapper never fires
+</span><span class="">   99:     # forgot eat -- runtime croak when called
+</span><span class="">  100: 
+</span><span class="">  101: =head1 DESCRIPTION
+</span><span class="">  102: 
+</span><span class="">  103: Enforces abstract (virtual) method contracts for plain-Perl OO without
+</span><span class="">  104: requiring Moose or Moo.  A subroutine decorated with C&lt;:Abstract&gt; (or
+</span><span class="">  105: named in C&lt;use Sub::Abstract qw(...)&gt;) is replaced at C&lt;CHECK&gt; time with
+</span><span class="">  106: a wrapper that C&lt;Carp::croak&gt;s whenever it is reached.
+</span><span class="">  107: 
+</span><span class="">  108: Perl&#39;s MRO ensures the wrapper is only reached when no subclass in the
+</span><span class="">  109: call chain has provided an implementation: if C&lt;Dog::speak&gt; exists, the
+</span><span class="">  110: wrapper installed in C&lt;Animal::speak&gt; is never called.
+</span><span class="">  111: 
+</span><span class="">  112: This module is only meaningful for plain-Perl OO or packages that do not
+</span><span class="">  113: use a full object framework.  Moo and Moose handle abstract/required
+</span><span class="">  114: methods in their own object systems.
+</span><span class="">  115: 
+</span><span class="">  116: =head2 Two usage forms
+</span><span class="">  117: 
+</span><span class="">  118: =over 4
+</span><span class="">  119: 
+</span><span class="">  120: =item Attribute form (preferred)
+</span><span class="">  121: 
+</span><span class="">  122:     sub speak :Abstract { }
+</span><span class="">  123: 
+</span><span class="">  124: The C&lt;:Abstract&gt; attribute is registered in C&lt;UNIVERSAL&gt; via
+</span><span class="">  125: L&lt;Attribute::Handlers&gt; when C&lt;Sub::Abstract&gt; is loaded, so every package
+</span><span class="">  126: has access to it without further C&lt;use&gt; or inheritance.  A stub body
+</span><span class="">  127: (even an empty one) is required because C&lt;Attribute::Handlers&gt; needs a
+</span><span class="">  128: C&lt;CODE&gt; ref.  The stub is replaced at C&lt;CHECK&gt; time.
+</span><span class="">  129: 
+</span><span class="">  130: =item Declarative form
+</span><span class="">  131: 
+</span><span class="">  132:     use Sub::Abstract qw(speak eat);
+</span><span class="">  133: 
+</span><span class="">  134: Each named method is installed as an abstract-croak wrapper at C&lt;CHECK&gt;
+</span><span class="">  135: time (or immediately if the module is loaded past C&lt;CHECK&gt;).  No stub body
+</span><span class="">  136: is needed.
+</span><span class="">  137: 
+</span><span class="">  138: =back
+</span><span class="">  139: 
+</span><span class="">  140: =head2 Bypass for testing
+</span><span class="">  141: 
+</span><span class="">  142: Either condition alone (OR logic) suppresses the croak:
+</span><span class="">  143: 
+</span><span class="">  144: =over 4
+</span><span class="">  145: 
+</span><span class="">  146: =item * C&lt;$Sub::Abstract::BYPASS&gt; set to a true value.  Use C&lt;local&gt; in tests.
+</span><span class="">  147: 
+</span><span class="">  148: =item * C&lt;$ENV{HARNESS_ACTIVE}&gt; set (the convention used by L&lt;Test::Harness&gt;/prove).
+</span><span class="">  149: 
+</span><span class="">  150: =back
+</span><span class="">  151: 
+</span><span class="">  152: The C&lt;HARNESS_ACTIVE&gt; bypass can be disabled:
+</span><span class="">  153: 
+</span><span class="">  154:     $Sub::Abstract::config{harness_bypass} = 0;
+</span><span class="">  155: 
+</span><span class="">  156: =head2 Error message format
+</span><span class="">  157: 
+</span><span class="">  158:     speak() is an abstract method of Animal and must be implemented by Dog
+</span><span class="">  159: 
+</span><span class="">  160: =head1 PUBLIC INTERFACE
+</span><span class="">  161: 
+</span><span class="">  162: =head2 import
+</span><span class="">  163: 
+</span><span class="">  164:     use Sub::Abstract;                   # attribute form -- no arguments
+</span><span class="">  165:     use Sub::Abstract qw(speak eat);    # declarative form
+</span><span class="">  166: 
+</span><span class="">  167: =head3 Purpose
+</span><span class="">  168: 
+</span><span class="">  169: With B&lt;no arguments&gt;: makes the C&lt;:Abstract&gt; attribute globally available.
+</span><span class="">  170: 
+</span><span class="">  171: With B&lt;one or more method names&gt;: installs abstract-croak wrappers for
+</span><span class="">  172: those methods in the calling package at C&lt;CHECK&gt; time (or immediately if
+</span><span class="">  173: C&lt;CHECK&gt; has already fired).
+</span><span class="">  174: 
+</span><span class="">  175: =head3 Arguments
+</span><span class="">  176: 
+</span><span class="">  177: =over 4
+</span><span class="">  178: 
+</span><span class="">  179: =item C&lt;@methods&gt; (optional)
+</span><span class="">  180: 
+</span><span class="">  181: Zero or more Perl sub names, each matching C&lt;/\A[_a-zA-Z]\w*\z/&gt;.
+</span><span class="">  182: 
+</span><span class="">  183: =back
+</span><span class="">  184: 
+</span><span class="">  185: =head3 Returns
+</span><span class="">  186: 
+</span><span class="">  187: The class name (C&lt;&#39;Sub::Abstract&#39;&gt;) as a plain string.
+</span><span class="">  188: 
+</span><span class="">  189: =head3 MESSAGES
+</span><span class="">  190: 
+</span><span class="">  191:     Message                                              Meaning
+</span><span class="">  192:     ---------------------------------------------------  -----------------------------------------------
+</span><span class="">  193:     &quot;Sub::Abstract-&gt;import: &#39;NAME&#39; is not a valid        A name failed the identifier regex.
+</span><span class="">  194:      Perl identifier&quot;
+</span><span class="">  195: 
+</span><span class="">  196: =cut
+</span><span class="">  197: 
+</span><span class="">  198: sub import {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 205 → 217</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 205 → 0</span></span>  199: 	my ($class, @subs) = @_;
+</span><span class="">  200: 
+</span><span class="">  201: 	# No sub names: the :Abstract attribute is always available via UNIVERSAL.
+</span><span class="">  202: 	return set_return($class, { type =&gt; &#39;string&#39; }) unless @subs;
+</span><span class="">  203: 
+</span><span class="">  204: 	# Validate every name before touching the stash (fail-fast, all-or-nothing).
+</span><span class="">  205: 	for my $sub_name (@subs) {
+</span><span class="">  206: 		my $check = (defined $sub_name &amp;&amp; !ref $sub_name) ? $sub_name : q{};
+</span><span class="">  207: 		eval {
+</span><span class="">  208: 			validate_strict(
+</span><span class="">  209: 				schema =&gt; $SUB_NAME_SCHEMA,
+</span><span class="">  210: 				input  =&gt; { name =&gt; $check },
+</span><span class="">  211: 			);
+</span><span class="">  212: 		};
+</span><span class="">  213: 		croak &quot;$SELF-&gt;import: &#39;$check&#39; is not a valid Perl identifier&quot; if $@;
+</span><span class="">  214: 	}
+</span><span class="">  215: 
+</span><span class="">  216: 	# Schedule or immediately apply wrapping depending on compile phase.
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 218 → 224</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 218 → 0</span></span>  217: 	my $owner_pkg = caller;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  218: 	if ($_post_check) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_218_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  219: 		_process_one($owner_pkg, $_) for @subs;
+</span><span class="">  220: 	} else {
+</span><span class="">  221: 		push @_pending, [ $owner_pkg, $_ ] for @subs;
+</span><span class="">  222: 	}
+</span><span class="">  223: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 0</span></span>  224: 	return set_return($class, { type =&gt; &#39;string&#39; });
+</span><span class="">  225: }
+</span><span class="">  226: 
+</span><span class="">  227: # -------------------------------------------------------------------
+</span><span class="">  228: # CHECK-TIME PROCESSING
+</span><span class="">  229: # -------------------------------------------------------------------
+</span><span class="">  230: 
+</span><span class="">  231: # Process all declarative wraps queued during import().
+</span><span class="">  232: # After this fires, $_post_check=1 so future import() calls wrap immediately.
+</span><span class="">  233: CHECK {
+</span><span class="">  234: 	$_post_check = 1;
+</span><span class="">  235: 	_process_one(@$_) for @_pending;
+</span><span class="">  236: 	@_pending = ();
+</span><span class="">  237: }
+</span><span class="">  238: 
+</span><span class="">  239: # -------------------------------------------------------------------
+</span><span class="">  240: # PRIVATE SUBROUTINES
+</span><span class="">  241: # -------------------------------------------------------------------
+</span><span class="">  242: 
+</span><span class="">  243: # _process_one
+</span><span class="">  244: # Purpose      : Install an abstract-croak wrapper for a named method in a package.
+</span><span class="">  245: # Entry        : $owner_pkg -- the package that declares the abstract method
+</span><span class="">  246: #                $sub_name  -- the unqualified method name to wrap
+</span><span class="">  247: # Exit status  : Returns normally; the stash entry is replaced with a wrapper.
+</span><span class="">  248: # Side effects : Modifies the package stash for $owner_pkg.
+</span><span class="">  249: # Notes        : Unlike Sub::Private/_process_one, no pre-existence check is done:
+</span><span class="">  250: #                the declarative form is the normal case where no body exists yet.
+</span><span class="">  251: sub _process_one {
+</span><span class="">  252: 	my ($owner_pkg, $sub_name) = @_;
+</span><span class="">  253: 
+</span><span class="">  254: 	_assert_private_caller(&#39;_process_one&#39;)
+</span><span class="">  255: 		unless $BYPASS || ($config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE});
+</span><span class="">  256: 
+</span><span class="">  257: 	no strict &#39;refs&#39;;
+</span><span class="">  258: 	no warnings &#39;redefine&#39;;
+</span><span class="">  259: 	*{&quot;${owner_pkg}::${sub_name}&quot;} = _wrap($owner_pkg, $sub_name);
+</span><span class="">  260: 	return;
+</span><span class="">  261: }
+</span><span class="">  262: 
+</span><span class="">  263: # _wrap
+</span><span class="">  264: # Purpose      : Build an abstract-enforcement wrapper closure.
+</span><span class="">  265: # Entry        : $owner_pkg -- the package that declares the abstract method
+</span><span class="">  266: #                $sub_name  -- the unqualified method name (for error messages)
+</span><span class="">  267: # Exit status  : Returns a new coderef that croaks with a descriptive message
+</span><span class="">  268: #                naming the invocant class, unless a bypass is active.
+</span><span class="">  269: # Notes        : Unlike Sub::Private/_wrap there is no $code argument and no
+</span><span class="">  270: #                goto: the wrapper never delegates because calling an abstract
+</span><span class="">  271: #                method is always an error.  ref($_[0])||$_[0] extracts the
+</span><span class="">  272: #                invocant so the error names the concrete class (e.g. Dog),
+</span><span class="">  273: #                not the abstract base (Animal).
+</span><span class="">  274: sub _wrap {
+</span><span class="">  275: 	my ($owner_pkg, $sub_name) = @_;
+</span><span class="">  276: 
+</span><span class="">  277: 	_assert_private_caller(&#39;_wrap&#39;)
+</span><span class="">  278: 		unless $BYPASS || ($config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE});
+</span><span class="">  279: 
+</span><span class="">  280: 	return sub {
+</span><span class="">  281: 		return if $BYPASS;
+</span><span class="">  282: 		return if $config{harness_bypass} &amp;&amp; $ENV{HARNESS_ACTIVE};
+</span><span class="">  283: 		my $invocant = ref($_[0]) || $_[0] // &#39;&lt;undef&gt;&#39;;
+</span><span class="">  284: 		croak &quot;${sub_name}() is an abstract method of ${owner_pkg}&quot;
+</span><span class="">  285: 			. &quot; and must be implemented by ${invocant}&quot;;
+</span><span class="">  286: 	};
+</span><span class="">  287: }
+</span><span class="">  288: 
+</span><span class="">  289: # _assert_private_caller
+</span><span class="">  290: # Purpose      : Croak if a guarded private method was called from outside
+</span><span class="">  291: #                Sub::Abstract.
+</span><span class="">  292: # Entry        : $method_name -- the guarded method name (for error messages)
+</span><span class="">  293: # Exit status  : Returns normally if caller(1) is Sub::Abstract; croaks otherwise.
+</span><span class="">  294: sub _assert_private_caller {
+</span><span class="">  295: 	my ($method_name) = @_;
+</span><span class="">  296: 	my $caller = (caller(1))[0] // q{};
+</span><span class="">  297: 	return if $caller eq $SELF;
+</span><span class="">  298: 	croak &quot;${method_name}() is a private method of $SELF&quot;
+</span><span class="">  299: 		. &quot; and cannot be called from ${caller}&quot;;
+</span><span class="">  300: }
+</span><span class="">  301: 
+</span><span class="">  302: 1;
+</span><span class="">  303: 
+</span><span class="">  304: __END__
+</span><span class="">  305: 
+</span><span class="">  306: =head1 KNOWN LIMITATIONS
+</span><span class="">  307: 
+</span><span class="">  308: =over 4
+</span><span class="">  309: 
+</span><span class="">  310: =item Runtime-only
+</span><span class="">  311: 
+</span><span class="">  312: Checks are runtime only.  There is no compile-time scan of C&lt;@ISA&gt; trees
+</span><span class="">  313: to verify that all abstract methods are implemented -- that would require
+</span><span class="">  314: knowing all subclasses at compile time, which is not possible in general Perl.
+</span><span class="">  315: 
+</span><span class="">  316: =item C&lt;can()&gt; returns the croak-stub
+</span><span class="">  317: 
+</span><span class="">  318: Because the stash entry is replaced with a wrapper closure,
+</span><span class="">  319: C&lt;&lt; Animal-&gt;can(&#39;speak&#39;) &gt;&gt; returns the wrapper (truthy) rather than
+</span><span class="">  320: C&lt;undef&gt;.  A future release may add a caller-aware C&lt;can()&gt; override.
+</span><span class="">  321: 
+</span><span class="">  322: =item UNIVERSAL namespace pollution
+</span><span class="">  323: 
+</span><span class="">  324: The C&lt;:Abstract&gt; attribute is installed in C&lt;UNIVERSAL&gt;, which means
+</span><span class="">  325: C&lt;UNIVERSAL::Abstract&gt; is added to the global namespace.
+</span><span class="">  326: 
+</span><span class="">  327: =item Not for Moo/Moose
+</span><span class="">  328: 
+</span><span class="">  329: Moo and Moose handle required/abstract methods in their own object systems.
+</span><span class="">  330: This module is for plain-Perl OO only.
+</span><span class="">  331: 
+</span><span class="">  332: =back
+</span><span class="">  333: 
+</span><span class="">  334: =head1 DEPENDENCIES
+</span><span class="">  335: 
+</span><span class="">  336: L&lt;Carp&gt; (core),
+</span><span class="">  337: L&lt;Attribute::Handlers&gt; (core since 5.8),
+</span><span class="">  338: L&lt;Readonly&gt;,
+</span><span class="">  339: L&lt;Params::Validate::Strict&gt;,
+</span><span class="">  340: L&lt;Return::Set&gt;.
+</span><span class="">  341: 
+</span><span class="">  342: =head1 SEE ALSO
+</span><span class="">  343: 
+</span><span class="">  344: =over 4
+</span><span class="">  345: 
+</span><span class="">  346: =item * L&lt;Test Dashboard|https://nigelhorne.github.io/Sub-Abstract/coverage/&gt;
+</span><span class="">  347: 
+</span><span class="">  348: =item * L&lt;Sub::Private&gt;
+</span><span class="">  349: 
+</span><span class="">  350: Sister module enforcing strictly private (owner-only) access.
+</span><span class="">  351: 
+</span><span class="">  352: =item * L&lt;Sub::Protected&gt;
+</span><span class="">  353: 
+</span><span class="">  354: Sister module enforcing protected (owner + subclass) access.
+</span><span class="">  355: 
+</span><span class="">  356: =back
+</span><span class="">  357: 
+</span><span class="">  358: =head1 PUBLIC VARIABLES
+</span><span class="">  359: 
+</span><span class="">  360: =head2 C&lt;$BYPASS&gt;
+</span><span class="">  361: 
+</span><span class="">  362: Set to a true value to disable the abstract-method croak for all wrapped
+</span><span class="">  363: subs.  Use C&lt;local&gt; in tests:
+</span><span class="">  364: 
+</span><span class="">  365:     local $Sub::Abstract::BYPASS = 1;
+</span><span class="">  366: 
+</span><span class="">  367: =head2 C&lt;%config&gt;
+</span><span class="">  368: 
+</span><span class="">  369: =over 4
+</span><span class="">  370: 
+</span><span class="">  371: =item C&lt;harness_bypass&gt; (default: 1)
+</span><span class="">  372: 
+</span><span class="">  373: When true, the abstract-method croak is suppressed whenever
+</span><span class="">  374: C&lt;$ENV{HARNESS_ACTIVE}&gt; is set (the convention used by L&lt;Test::Harness&gt;/prove).
+</span><span class="">  375: Set to 0 to test enforcement from within a test harness.
+</span><span class="">  376: 
+</span><span class="">  377: =back
+</span><span class="">  378: 
+</span><span class="">  379: =cut
+</span><span class="">  380: 
+</span><span class="">  381: =head2 FORMAL SPECIFICATION
+</span><span class="">  382: 
+</span><span class="">  383: The following Z-notation schemas formally specify the C&lt;AbstractCroak&gt;
+</span><span class="">  384: operation.
+</span><span class="">  385: 
+</span><span class="">  386:     -- Type abbreviations
+</span><span class="">  387:     Package  == seq CHAR     -- a non-empty Perl package name string
+</span><span class="">  388:     SubName  == seq CHAR     -- a Perl identifier string
+</span><span class="">  389: 
+</span><span class="">  390:     -- System state
+</span><span class="">  391:     +-Registry-------------------------------------------+
+</span><span class="">  392:     | abstract  : P (Package x SubName)                  |
+</span><span class="">  393:     | bypass    : BOOL                                   |
+</span><span class="">  394:     | config    : { harness_bypass : BOOL }              |
+</span><span class="">  395:     +----------------------------------------------------+
+</span><span class="">  396: 
+</span><span class="">  397:     -- Initial state
+</span><span class="">  398:     +-InitRegistry---------------------------------------+
+</span><span class="">  399:     | Registry                                           |
+</span><span class="">  400:     |----------------------------------------------------|
+</span><span class="">  401:     | abstract  = {}                                     |
+</span><span class="">  402:     | bypass    = false                                  |
+</span><span class="">  403:     | config    = { harness_bypass |-&gt; true }            |
+</span><span class="">  404:     +----------------------------------------------------+
+</span><span class="">  405: 
+</span><span class="">  406:     -- Bypass predicate
+</span><span class="">  407:     bypass_active(R) &lt;=&gt;
+</span><span class="">  408:         R.bypass or (R.config.harness_bypass and HARNESS_ACTIVE)
+</span><span class="">  409: 
+</span><span class="">  410:     -- AbstractCroak: fires when the wrapper is reached (no override in MRO)
+</span><span class="">  411:     +-AbstractCroak--------------------------------------+
+</span><span class="">  412:     | Xi-Registry                                        |
+</span><span class="">  413:     | invocant? : Package                                |
+</span><span class="">  414:     | owner?    : Package                                |
+</span><span class="">  415:     | name?     : SubName                                |
+</span><span class="">  416:     |----------------------------------------------------|
+</span><span class="">  417:     | (owner?, name?) in abstract                        |
+</span><span class="">  418:     | not bypass_active =&gt;                               |
+</span><span class="">  419:     |   croak(&quot;name?()&quot; ++ &quot; is an abstract method of &quot; |
+</span><span class="">  420:     |          ++ owner? ++ &quot; and must be implemented by&quot;|
+</span><span class="">  421:     |          ++ invocant?)                             |
+</span><span class="">  422:     +----------------------------------------------------+
+</span><span class="">  423: 
+</span><span class="">  424:     -- Key difference from Sub::Private / Sub::Protected:
+</span><span class="">  425:     --   No caller check is performed.  The wrapper always croaks
+</span><span class="">  426:     --   because reaching it means no subclass provided an implementation.
+</span><span class="">  427: 
+</span><span class="">  428: =head1 AUTHOR
+</span><span class="">  429: 
+</span><span class="">  430: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  431: 
+</span><span class="">  432: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  433: 
+</span><span class="">  434: Copyright 2026 Nigel Horne.
+</span><span class="">  435: 
+</span><span class="">  436: Usage is subject to the GPL2 licence terms.
+</span><span class="">  437: If you use it, please let me know.
+</span><span class="">  438: 
+</span><span class="">  439: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	
