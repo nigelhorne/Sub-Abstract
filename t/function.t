@@ -926,4 +926,45 @@ subtest 'mock_scoped: validate_strict replacement is properly scoped' => sub {
 	} 'outside mock_scoped: real validate_strict accepts a valid identifier';
 };
 
+# ===================================================================
+# SECTION 8 (addition): TER3 guard combinations
+#
+# The guard in _wrap() is:
+#   unless $BYPASS || ($config{harness_bypass} && $ENV{HARNESS_ACTIVE})
+# All other tests hit (BYPASS=1,HA=0), (BYPASS=0,HA=1), (BYPASS=0,HA=0).
+# The missing TER3 combination is (BYPASS=1, HA=1): BYPASS short-circuits.
+# ===================================================================
+
+# Both bypass conditions simultaneously true: BYPASS wins the || short-circuit.
+subtest '_wrap() guard: BYPASS=1 AND HARNESS_ACTIVE=1 simultaneously (TER3)' => sub {
+	plan tests => 1;
+
+	# Both active at the same time -- the guard must be skipped by BYPASS alone
+	local $Sub::Abstract::BYPASS = 1;
+	local $ENV{HARNESS_ACTIVE}   = 1;
+
+	lives_ok {
+		Sub::Abstract::_wrap($OWNER, $config{wrap_sub});
+	} '_wrap() guard: skipped when BYPASS=1 AND HARNESS_ACTIVE=1 (TER3)';
+};
+
+# The returned closure: BYPASS=1 short-circuits before harness_bypass is checked.
+# Testing BYPASS=1 with harness_bypass=0 confirms the || evaluation order.
+subtest '_wrap() closure: BYPASS=1 suppresses croak even when harness_bypass=0' => sub {
+	plan tests => 1;
+
+	# Obtain the wrapper while bypassed so the guard does not fire
+	my $wrapper;
+	{ local $Sub::Abstract::BYPASS = 1;
+	  $wrapper = Sub::Abstract::_wrap($OWNER, $config{wrap_sub}); }
+
+	# BYPASS=1 must suppress the croak even though harness_bypass is disabled
+	local $Sub::Abstract::BYPASS                 = 1;
+	local $Sub::Abstract::config{harness_bypass} = 0;
+	local $ENV{HARNESS_ACTIVE}                   = 0;
+
+	lives_ok { $wrapper->() }
+		'closure: BYPASS=1 short-circuits before harness_bypass is consulted';
+};
+
 done_testing;

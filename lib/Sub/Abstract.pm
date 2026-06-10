@@ -43,29 +43,6 @@ Readonly::Scalar my $SUB_NAME_SCHEMA => {
 # Public variables
 # ---------------------------------------------------------------------------
 
-=head1 PUBLIC VARIABLES
-
-=head2 C<$BYPASS>
-
-Set to a true value to disable the abstract-method croak for all wrapped
-subs.  Use C<local> in tests:
-
-    local $Sub::Abstract::BYPASS = 1;
-
-=head2 C<%config>
-
-=over 4
-
-=item C<harness_bypass> (default: 1)
-
-When true, the abstract-method croak is suppressed whenever
-C<$ENV{HARNESS_ACTIVE}> is set (the convention used by L<Test::Harness>/prove).
-Set to 0 to test enforcement from within a test harness.
-
-=back
-
-=cut
-
 our $BYPASS = 0;
 
 our %config = (
@@ -375,6 +352,29 @@ Sister module enforcing strictly private (owner-only) access.
 Sister module enforcing protected (owner + subclass) access.
 
 =back
+
+=head1 PUBLIC VARIABLES
+
+=head2 C<$BYPASS>
+
+Set to a true value to disable the abstract-method croak for all wrapped
+subs.  Use C<local> in tests:
+
+    local $Sub::Abstract::BYPASS = 1;
+
+=head2 C<%config>
+
+=over 4
+
+=item C<harness_bypass> (default: 1)
+
+When true, the abstract-method croak is suppressed whenever
+C<$ENV{HARNESS_ACTIVE}> is set (the convention used by L<Test::Harness>/prove).
+Set to 0 to test enforcement from within a test harness.
+
+=back
+
+=cut
 
 =head2 FORMAL SPECIFICATION
 

@@ -320,6 +320,28 @@ use_ok 'Sub::Abstract' or BAIL_OUT 'Sub::Abstract failed to load';
 	sub run { 'ran' }
 }
 
+# ===== Scenario J: SUPER:: dispatch =====
+# SuperCallSub provides a concrete render() that immediately delegates to
+# SUPER::render(), which is the abstract wrapper in SuperCallBase.
+# This exercises the path where the wrapper is reached via SUPER:: dispatch
+# rather than directly through an unimplemented subclass.
+
+{
+	package IT::SuperCallBase;
+	use Sub::Abstract;
+	sub new    { bless {}, shift }
+	sub render :Abstract { }
+}
+
+{
+	package IT::SuperCallSub;
+	our @ISA = ('IT::SuperCallBase');
+	sub new    { bless {}, shift }
+	# render IS defined (MRO finds it), but it explicitly calls SUPER::render,
+	# which routes directly to IT::SuperCallBase::render (the abstract wrapper).
+	sub render { my $self = shift; $self->SUPER::render(@_) }
+}
+
 # -------------------------------------------------------------------
 # TESTS
 # -------------------------------------------------------------------
@@ -1049,6 +1071,55 @@ subtest 'Moo integration: :Abstract enforces in Moo-based class' => sub {
 	throws_ok { IT::MooBase->new->render }
 		qr/render\(\) is an abstract method of IT::MooBase/,
 		'Moo: abstract method still croaks on the base class';
+};
+
+# ===================================================================
+# SECTION 19: SUPER:: dispatch to an abstract method
+#
+# When a subclass method explicitly calls $self->SUPER::abstract_method,
+# the abstract wrapper in the base class is reached directly.  The
+# invocant inside the wrapper is still the subclass instance.
+# ===================================================================
+
+subtest 'SUPER:: dispatch: abstract wrapper fires when reached via SUPER::' => sub {
+	plan tests => 2;
+	local $ENV{HARNESS_ACTIVE}   = 0;
+	local $Sub::Abstract::BYPASS = 0;
+
+	diag 'IT::SuperCallSub::render calls $self->SUPER::render' if $ENV{TEST_VERBOSE};
+
+	# The error must identify the method and the abstract base
+	throws_ok { IT::SuperCallSub->new->render }
+		qr/render\(\) is an abstract method of IT::SuperCallBase/,
+		'SUPER:: dispatch: error names the method and the base package';
+
+	# The invocant must be the subclass (the object that started the call)
+	throws_ok { IT::SuperCallSub->new->render }
+		qr/must be implemented by IT::SuperCallSub/,
+		'SUPER:: dispatch: invocant in error is the concrete subclass';
+};
+
+# ===================================================================
+# SECTION 20: can() stub is callable and croaks with the full message
+#
+# POD documents that can() returns the wrapper (truthy) rather than
+# undef.  This section verifies not just truthiness but that calling
+# the returned coderef produces the documented abstract-method croak.
+# ===================================================================
+
+subtest 'can() stub is callable and croaks when invoked directly' => sub {
+	plan tests => 2;
+	local $ENV{HARNESS_ACTIVE}   = 0;
+	local $Sub::Abstract::BYPASS = 0;
+
+	# can() must return the wrapper, not undef -- documented limitation
+	my $stub = IT::Animal->can('speak');
+	ok $stub, 'can("speak") returns a truthy coderef (documented limitation)';
+
+	# Calling the returned coderef with a non-implementing object must croak
+	throws_ok { $stub->(IT::Blob->new) }
+		qr/speak\(\) is an abstract method of IT::Animal/,
+		'can() coderef: calling it directly triggers the abstract croak';
 };
 
 done_testing;

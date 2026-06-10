@@ -205,6 +205,13 @@ use Sub::Abstract;
 	sub action :Abstract { }
 }
 
+# ===== Declarative AUTOLOAD (distinct from attribute form above) =====
+{
+	package EC::DeclAutoloadBase;
+	use Sub::Abstract qw(AUTOLOAD);    # declarative form -- no stub body needed
+	sub new { bless {}, shift }
+}
+
 # -------------------------------------------------------------------
 # TESTS
 # -------------------------------------------------------------------
@@ -1002,6 +1009,49 @@ subtest 'undef as $_[0]: invocant is "<undef>", no crash' => sub {
 	# Must croak cleanly with '<undef>' as the invocant, not a crash
 	throws_ok { EC::NoArgClass::class_op(undef) }
 		qr/abstract method/, 'undef as invocant: croak fires cleanly';
+};
+
+# ===================================================================
+# SECTION 17: Unblessed GLOB reference as invocant
+#
+# ref(\*STDOUT) = 'GLOB'; the invocant lookup is ref($_[0])||$_[0]//'<undef>'.
+# An unblessed GLOB ref produces 'GLOB' (truthy ref() result), distinct
+# from ARRAY ('ARRAY') and CODE ('CODE') refs already tested in section 4.
+# ===================================================================
+
+subtest 'GLOB ref as invocant: error message names "GLOB"' => sub {
+	plan tests => 1;
+	local $ENV{HARNESS_ACTIVE}   = 0;
+	local $Sub::Abstract::BYPASS = 0;
+
+	# Build a wrapper directly so we can pass any value as $_[0]
+	my $wrapper;
+	{ local $Sub::Abstract::BYPASS = 1;
+	  $wrapper = Sub::Abstract::_wrap('EC::Base', 'foo'); }
+
+	# An unblessed GLOB ref: ref(\*STDOUT) = 'GLOB' -- truthy, so ref() branch fires
+	throws_ok { $wrapper->(\*STDOUT) }
+		qr/must be implemented by GLOB/,
+		'GLOB ref as $_[0]: invocant reported as "GLOB" in the error';
+};
+
+# ===================================================================
+# SECTION 18: Declarative AUTOLOAD (coverage gap from section 5)
+#
+# Section 5 tests AUTOLOAD via the ATTRIBUTE form (:Abstract).
+# This section tests the DECLARATIVE form (use Sub::Abstract qw(AUTOLOAD))
+# -- a distinct code path through import() and _process_one().
+# ===================================================================
+
+subtest 'declarative AUTOLOAD: undefined method reaches the abstract wrapper' => sub {
+	plan tests => 1;
+	local $ENV{HARNESS_ACTIVE}   = 0;
+	local $Sub::Abstract::BYPASS = 0;
+
+	# Any undefined method call triggers AUTOLOAD (the abstract wrapper)
+	throws_ok { EC::DeclAutoloadBase->new->nonexistent_method }
+		qr/AUTOLOAD\(\) is an abstract method of EC::DeclAutoloadBase/,
+		'declarative AUTOLOAD: undefined-method call reaches abstract wrapper';
 };
 
 done_testing;

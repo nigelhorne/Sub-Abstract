@@ -6,23 +6,6 @@ Sub::Abstract - Abstract (virtual) methods for plain-Perl OO
 
 Version 0.01
 
-# PUBLIC VARIABLES
-
-## `$BYPASS`
-
-Set to a true value to disable the abstract-method croak for all wrapped
-subs.  Use `local` in tests:
-
-    local $Sub::Abstract::BYPASS = 1;
-
-## `%config`
-
-- `harness_bypass` (default: 1)
-
-    When true, the abstract-method croak is suppressed whenever
-    `$ENV{HARNESS_ACTIVE}` is set (the convention used by [Test::Harness](https://metacpan.org/pod/Test%3A%3AHarness)/prove).
-    Set to 0 to test enforcement from within a test harness.
-
 # SYNOPSIS
 
     package Animal;
@@ -163,6 +146,23 @@ The class name (`'Sub::Abstract'`) as a plain string.
 - [Sub::Protected](https://metacpan.org/pod/Sub%3A%3AProtected)
 
     Sister module enforcing protected (owner + subclass) access.
+
+# PUBLIC VARIABLES
+
+## `$BYPASS`
+
+Set to a true value to disable the abstract-method croak for all wrapped
+subs.  Use `local` in tests:
+
+    local $Sub::Abstract::BYPASS = 1;
+
+## `%config`
+
+- `harness_bypass` (default: 1)
+
+    When true, the abstract-method croak is suppressed whenever
+    `$ENV{HARNESS_ACTIVE}` is set (the convention used by [Test::Harness](https://metacpan.org/pod/Test%3A%3AHarness)/prove).
+    Set to 0 to test enforcement from within a test harness.
 
 ## FORMAL SPECIFICATION
 

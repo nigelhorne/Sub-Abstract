@@ -872,4 +872,25 @@ subtest 'mock_scoped: validate_strict replacement is scoped correctly' => sub {
 	} 'outside mock_scoped: real validate_strict succeeds for a valid name';
 };
 
+# ===================================================================
+# SECTION 15 (addition): single-underscore method name
+#
+# The documented regex /\A[_a-zA-Z]\w*\z/ allows a single underscore
+# '_' as a complete valid Perl identifier (the \w* matches zero chars).
+# This boundary case is not tested by any other existing subtest.
+# ===================================================================
+
+# A single underscore is at the minimum-length boundary of the regex.
+subtest 'import() accepts single-underscore identifier "_"' => sub {
+	plan tests => 1;
+
+	# Create a package and install '_' as an abstract method post-CHECK
+	{ package UT::SingleUnderscore; sub new { bless {}, shift } }
+
+	lives_ok {
+		package UT::SingleUnderscore;
+		Sub::Abstract->import('_');
+	} 'import("_") lives: single underscore matches /\\A[_a-zA-Z]\\w*\\z/';
+};
+
 done_testing;
