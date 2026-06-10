@@ -655,6 +655,11 @@ L<Return::Set>.
 
 =item * L<Test Dashboard|https://nigelhorne.github.io/Sub-Abstract/coverage/>
 
+=item * L<Class::Abstract>
+
+Sister module: enforces abstract classes.
+Pair with C<Sub::Abstract> to create fully enforced abstract base classes.
+
 =item * L<Sub::Private>
 
 Sister module enforcing strictly private (owner-only) access.

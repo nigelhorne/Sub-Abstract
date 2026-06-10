@@ -351,6 +351,11 @@ and the compile-time registration state.
 # SEE ALSO
 
 - [Test Dashboard](https://nigelhorne.github.io/Sub-Abstract/coverage/)
+- [Class::Abstract](https://metacpan.org/pod/Class%3A%3AAbstract)
+
+    Sister module: enforces abstract classes.
+    Pair with `Sub::Abstract` to create fully enforced abstract base classes.
+
 - [Sub::Private](https://metacpan.org/pod/Sub%3A%3APrivate)
 
     Sister module enforcing strictly private (owner-only) access.
