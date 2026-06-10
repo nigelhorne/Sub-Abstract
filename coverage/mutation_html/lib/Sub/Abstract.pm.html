@@ -953,55 +953,60 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  655: 
 </span><span class="">  656: =item * L&lt;Test Dashboard|https://nigelhorne.github.io/Sub-Abstract/coverage/&gt;
 </span><span class="">  657: 
-</span><span class="">  658: =item * L&lt;Sub::Private&gt;
+</span><span class="">  658: =item * L&lt;Class::Abstract&gt;
 </span><span class="">  659: 
-</span><span class="">  660: Sister module enforcing strictly private (owner-only) access.
-</span><span class="">  661: 
-</span><span class="">  662: =item * L&lt;Sub::Protected&gt;
-</span><span class="">  663: 
-</span><span class="">  664: Sister module enforcing protected (owner + subclass) access.
-</span><span class="">  665: 
-</span><span class="">  666: =back
-</span><span class="">  667: 
-</span><span class="">  668: =head1 PUBLIC VARIABLES
-</span><span class="">  669: 
-</span><span class="">  670: =head2 C&lt;$BYPASS&gt;
-</span><span class="">  671: 
-</span><span class="">  672: Set to a true value to disable the abstract-method croak for all wrapped
-</span><span class="">  673: subs.  Use C&lt;local&gt; in tests:
+</span><span class="">  660: Sister module: enforces abstract classes.
+</span><span class="">  661: Pair with C&lt;Sub::Abstract&gt; to create fully enforced abstract base classes.
+</span><span class="">  662: 
+</span><span class="">  663: =item * L&lt;Sub::Private&gt;
+</span><span class="">  664: 
+</span><span class="">  665: Sister module enforcing strictly private (owner-only) access.
+</span><span class="">  666: 
+</span><span class="">  667: =item * L&lt;Sub::Protected&gt;
+</span><span class="">  668: 
+</span><span class="">  669: Sister module enforcing protected (owner + subclass) access.
+</span><span class="">  670: 
+</span><span class="">  671: =back
+</span><span class="">  672: 
+</span><span class="">  673: =head1 PUBLIC VARIABLES
 </span><span class="">  674: 
-</span><span class="">  675:     local $Sub::Abstract::BYPASS = 1;
+</span><span class="">  675: =head2 C&lt;$BYPASS&gt;
 </span><span class="">  676: 
-</span><span class="">  677: B&lt;Warning:&gt; any truthy value (including strings like C&lt;&quot;false&quot;&gt;, C&lt;&quot;off&quot;&gt;,
-</span><span class="">  678: C&lt;&quot;no&quot;&gt;) enables bypass, because Perl&#39;s truthiness is not English.
+</span><span class="">  677: Set to a true value to disable the abstract-method croak for all wrapped
+</span><span class="">  678: subs.  Use C&lt;local&gt; in tests:
 </span><span class="">  679: 
-</span><span class="">  680: =head2 C&lt;%config&gt;
+</span><span class="">  680:     local $Sub::Abstract::BYPASS = 1;
 </span><span class="">  681: 
-</span><span class="">  682: =over 4
-</span><span class="">  683: 
-</span><span class="">  684: =item C&lt;harness_bypass&gt; (default: 1)
-</span><span class="">  685: 
-</span><span class="">  686: When true, the abstract-method croak is suppressed whenever
-</span><span class="">  687: C&lt;$ENV{HARNESS_ACTIVE}&gt; is set (the convention used by L&lt;Test::Harness&gt;/prove).
-</span><span class="">  688: Set to 0 to test enforcement from within a test harness.
-</span><span class="">  689: 
-</span><span class="">  690: Note that C&lt;$BYPASS&gt; takes precedence: see L&lt;/Bypass precedence&gt; under
-</span><span class="">  691: KNOWN LIMITATIONS.
-</span><span class="">  692: 
-</span><span class="">  693: =back
+</span><span class="">  682: B&lt;Warning:&gt; any truthy value (including strings like C&lt;&quot;false&quot;&gt;, C&lt;&quot;off&quot;&gt;,
+</span><span class="">  683: C&lt;&quot;no&quot;&gt;) enables bypass, because Perl&#39;s truthiness is not English.
+</span><span class="">  684: 
+</span><span class="">  685: =head2 C&lt;%config&gt;
+</span><span class="">  686: 
+</span><span class="">  687: =over 4
+</span><span class="">  688: 
+</span><span class="">  689: =item C&lt;harness_bypass&gt; (default: 1)
+</span><span class="">  690: 
+</span><span class="">  691: When true, the abstract-method croak is suppressed whenever
+</span><span class="">  692: C&lt;$ENV{HARNESS_ACTIVE}&gt; is set (the convention used by L&lt;Test::Harness&gt;/prove).
+</span><span class="">  693: Set to 0 to test enforcement from within a test harness.
 </span><span class="">  694: 
-</span><span class="">  695: =head1 AUTHOR
-</span><span class="">  696: 
-</span><span class="">  697: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  698: 
-</span><span class="">  699: =head1 LICENCE AND COPYRIGHT
-</span><span class="">  700: 
-</span><span class="">  701: Copyright 2026 Nigel Horne.
-</span><span class="">  702: 
-</span><span class="">  703: Usage is subject to the GPL2 licence terms.
-</span><span class="">  704: If you use it, please let me know.
+</span><span class="">  695: Note that C&lt;$BYPASS&gt; takes precedence: see L&lt;/Bypass precedence&gt; under
+</span><span class="">  696: KNOWN LIMITATIONS.
+</span><span class="">  697: 
+</span><span class="">  698: =back
+</span><span class="">  699: 
+</span><span class="">  700: =head1 AUTHOR
+</span><span class="">  701: 
+</span><span class="">  702: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  703: 
+</span><span class="">  704: =head1 LICENCE AND COPYRIGHT
 </span><span class="">  705: 
-</span><span class="">  706: =cut
+</span><span class="">  706: Copyright 2026 Nigel Horne.
+</span><span class="">  707: 
+</span><span class="">  708: Usage is subject to the GPL2 licence terms.
+</span><span class="">  709: If you use it, please let me know.
+</span><span class="">  710: 
+</span><span class="">  711: =cut
 </span></pre>
 
 <script>
