@@ -139,6 +139,7 @@ The class name (`'Sub::Abstract'`) as a plain string.
 
 # SEE ALSO
 
+- [Test Dashboard](https://nigelhorne.github.io/Sub-Abstract/coverage/)
 - [Sub::Private](https://metacpan.org/pod/Sub%3A%3APrivate)
 
     Sister module enforcing strictly private (owner-only) access.

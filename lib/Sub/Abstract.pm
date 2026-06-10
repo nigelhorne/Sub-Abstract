@@ -343,6 +343,8 @@ L<Return::Set>.
 
 =over 4
 
+=item * L<Test Dashboard|https://nigelhorne.github.io/Sub-Abstract/coverage/>
+
 =item * L<Sub::Private>
 
 Sister module enforcing strictly private (owner-only) access.
