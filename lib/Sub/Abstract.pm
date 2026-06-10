@@ -378,7 +378,7 @@ Set to 0 to test enforcement from within a test harness.
 
 =cut
 
-=head2 FORMAL SPECIFICATION
+=head1 FORMAL SPECIFICATION
 
 The following Z-notation schemas formally specify the C<AbstractCroak>
 operation.

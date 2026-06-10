@@ -165,7 +165,7 @@ subs.  Use `local` in tests:
     `$ENV{HARNESS_ACTIVE}` is set (the convention used by [Test::Harness](https://metacpan.org/pod/Test%3A%3AHarness)/prove).
     Set to 0 to test enforcement from within a test harness.
 
-## FORMAL SPECIFICATION
+# FORMAL SPECIFICATION
 
 The following Z-notation schemas formally specify the `AbstractCroak`
 operation.
