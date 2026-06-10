@@ -1,3 +1,5 @@
+# Generated from Makefile.PL using makefilepl2cpanfile
+
 requires 'perl', '5.008';
 
 requires 'Attribute::Handlers';
@@ -7,6 +9,7 @@ requires 'Readonly';
 requires 'Return::Set';
 
 on 'test' => sub {
+	requires 'IPC::System::Simple';
 	requires 'Test::DescribeMe';
 	requires 'Test::Memory::Cycle';
 	requires 'Test::Most';
