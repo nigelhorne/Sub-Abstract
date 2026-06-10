@@ -1,1 +1,1 @@
-{"score":100,"killed":[],"survived":[],"skipped":{},"killed_count":0,"total":0,"survived_count":0}
+{"total":1,"skipped":{},"survived_count":1,"killed":[],"score":"0.00","survived":[{"line":218,"hint":"Add tests asserting both true and false outcomes","difficulty":"MEDIUM","status":"Survived","priority":2,"id":"COND_INV_218_2","description":"Invert condition if to unless","file":"lib/Sub/Abstract.pm"}],"killed_count":0}
