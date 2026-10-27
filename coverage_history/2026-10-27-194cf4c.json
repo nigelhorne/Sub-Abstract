@@ -1,0 +1,259 @@
+{
+   "runs" : [
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070250.65047,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "-e",
+         "start" : 1793070244.7764,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070244.92318,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "-e",
+         "start" : 1793070244.92305,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070245.22269,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/00-load.t",
+         "start" : 1793070245.18475,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070245.55664,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/attribute.t",
+         "start" : 1793070245.55444,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070245.8909,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/basic.t",
+         "start" : 1793070245.88821,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070246.22137,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/bypass.t",
+         "start" : 1793070246.21845,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070246.55075,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/declarative.t",
+         "start" : 1793070246.54849,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070246.97811,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/edge_cases.t",
+         "start" : 1793070246.89269,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070247.36536,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/eof.t",
+         "start" : 1793070247.36512,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070247.60035,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/eol.t",
+         "start" : 1793070247.60013,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070247.92216,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/extended_tests.t",
+         "start" : 1793070247.89146,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070248.37982,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/function.t",
+         "start" : 1793070248.30299,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070248.90988,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/integration.t",
+         "start" : 1793070248.83341,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070249.38013,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/locales.t",
+         "start" : 1793070249.36762,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070249.73142,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/mutant_killers.t",
+         "start" : 1793070249.7207,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070250.07721,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/subclass.t",
+         "start" : 1793070250.07441,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Abstract (virtual) methods for plain-Perl OO",
+         "dir" : "/home/runner/work/Sub-Abstract/Sub-Abstract",
+         "finish" : 1793070250.488,
+         "name" : "Sub-Abstract",
+         "perl" : "5.40.4",
+         "run" : "t/unit.t",
+         "start" : 1793070250.41841,
+         "version" : "0.01"
+      }
+   ],
+   "summary" : {
+      "Total" : {
+         "branch" : {
+            "covered" : 18,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 18,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 24,
+            "error" : 1,
+            "percentage" : 96,
+            "total" : 25,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 79,
+            "percentage" : 100,
+            "total" : 79
+         },
+         "subroutine" : {
+            "covered" : 20,
+            "percentage" : 100,
+            "total" : 20
+         },
+         "total" : {
+            "covered" : 141,
+            "error" : 1,
+            "percentage" : 99.2957746478873,
+            "total" : 142,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/Sub/Abstract.pm" : {
+         "branch" : {
+            "covered" : 18,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 18,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 24,
+            "error" : 1,
+            "percentage" : 96,
+            "total" : 25,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 79,
+            "percentage" : 100,
+            "total" : 79
+         },
+         "subroutine" : {
+            "covered" : 20,
+            "percentage" : 100,
+            "total" : 20
+         },
+         "total" : {
+            "covered" : 141,
+            "error" : 1,
+            "percentage" : 99.2957746478873,
+            "total" : 142,
+            "uncoverable" : 0
+         }
+      }
+   }
+}
